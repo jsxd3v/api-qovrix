@@ -1,0 +1,3 @@
+"""api-qovrix: contract-aware API monitoring."""
+
+__version__ = "0.1.0"

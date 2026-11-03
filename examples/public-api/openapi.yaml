@@ -1,0 +1,66 @@
+openapi: 3.0.3
+info:
+  title: JSONPlaceholder (partial)
+  version: "1.0"
+servers:
+  - url: https://jsonplaceholder.typicode.com
+paths:
+  /todos/{id}:
+    get:
+      operationId: getTodo
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, example: 1 } }
+      responses:
+        "200":
+          description: A todo
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Todo" }
+  /users/{id}:
+    get:
+      operationId: getUser
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, example: 1 } }
+      responses:
+        "200":
+          description: A user
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+  /posts:
+    post:
+      operationId: createPost
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id]
+                properties: { id: { type: integer } }
+components:
+  schemas:
+    Todo:
+      type: object
+      required: [userId, id, title, completed]
+      properties:
+        userId: { type: integer }
+        id: { type: integer }
+        title: { type: string }
+        completed: { type: boolean }
+    User:
+      type: object
+      required: [id, name, email, address, company]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+        website: { type: string, nullable: true }
+        address:
+          type: object
+          required: [city]
+          properties: { city: { type: string } }
+        company:
+          type: object
+          properties: { name: { type: string } }

@@ -1,0 +1,592 @@
+{
+  "$defs": {
+    "ApiKeyAuth": {
+      "additionalProperties": false,
+      "properties": {
+        "in": {
+          "default": "header",
+          "enum": [
+            "header",
+            "query"
+          ],
+          "title": "In",
+          "type": "string"
+        },
+        "name": {
+          "description": "Header or query parameter name, e.g. 'X-API-Key'.",
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "const": "api_key",
+          "title": "Type",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "name",
+        "value"
+      ],
+      "title": "ApiKeyAuth",
+      "type": "object"
+    },
+    "BasicAuth": {
+      "additionalProperties": false,
+      "properties": {
+        "password": {
+          "title": "Password",
+          "type": "string"
+        },
+        "type": {
+          "const": "basic",
+          "title": "Type",
+          "type": "string"
+        },
+        "username": {
+          "title": "Username",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "username",
+        "password"
+      ],
+      "title": "BasicAuth",
+      "type": "object"
+    },
+    "BearerAuth": {
+      "additionalProperties": false,
+      "properties": {
+        "token": {
+          "title": "Token",
+          "type": "string"
+        },
+        "type": {
+          "const": "bearer",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "token"
+      ],
+      "title": "BearerAuth",
+      "type": "object"
+    },
+    "Defaults": {
+      "additionalProperties": false,
+      "properties": {
+        "drift": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DriftConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Default drift settings for every monitor."
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Headers",
+          "type": "object"
+        },
+        "interval": {
+          "anyOf": [
+            {
+              "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+              "type": "string"
+            },
+            {
+              "minimum": 0,
+              "type": "number"
+            }
+          ],
+          "default": 60.0,
+          "description": "Duration, e.g. '500ms', '10s', '1m', '2h' (a number means seconds).",
+          "title": "Interval"
+        },
+        "notify": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notify",
+          "type": "array"
+        },
+        "retries": {
+          "default": 0,
+          "maximum": 10,
+          "minimum": 0,
+          "title": "Retries",
+          "type": "integer"
+        },
+        "timeout": {
+          "anyOf": [
+            {
+              "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+              "type": "string"
+            },
+            {
+              "minimum": 0,
+              "type": "number"
+            }
+          ],
+          "default": 10.0,
+          "description": "Duration, e.g. '500ms', '10s', '1m', '2h' (a number means seconds).",
+          "title": "Timeout"
+        }
+      },
+      "title": "Defaults",
+      "type": "object"
+    },
+    "DriftConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "fail_on": {
+          "default": "breaking",
+          "enum": [
+            "breaking",
+            "warning",
+            "never"
+          ],
+          "title": "Fail On",
+          "type": "string"
+        },
+        "ignore": {
+          "description": "JSONPaths to skip, e.g. '$.meta.request_id' or '$..updated_at'.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Ignore",
+          "type": "array"
+        },
+        "min_samples": {
+          "default": 5,
+          "description": "Samples needed before the learned shape is trusted.",
+          "minimum": 1,
+          "title": "Min Samples",
+          "type": "integer"
+        }
+      },
+      "title": "DriftConfig",
+      "type": "object"
+    },
+    "Environment": {
+      "additionalProperties": false,
+      "properties": {
+        "base_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Url"
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Headers",
+          "type": "object"
+        },
+        "vars": {
+          "additionalProperties": true,
+          "title": "Vars",
+          "type": "object"
+        }
+      },
+      "title": "Environment",
+      "type": "object"
+    },
+    "NotifierConfig": {
+      "additionalProperties": true,
+      "description": "Notifier settings (used by `api-qovrix serve`, v0.2). Extra keys depend on the type.",
+      "properties": {
+        "type": {
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "NotifierConfig",
+      "type": "object"
+    },
+    "OAuth2ClientCredentials": {
+      "additionalProperties": false,
+      "properties": {
+        "audience": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Audience"
+        },
+        "client_auth": {
+          "default": "basic",
+          "description": "Send client credentials as HTTP basic auth (default) or in the form body.",
+          "enum": [
+            "basic",
+            "post"
+          ],
+          "title": "Client Auth",
+          "type": "string"
+        },
+        "client_id": {
+          "title": "Client Id",
+          "type": "string"
+        },
+        "client_secret": {
+          "title": "Client Secret",
+          "type": "string"
+        },
+        "extra_params": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Extra Params",
+          "type": "object"
+        },
+        "scope": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scope"
+        },
+        "token_url": {
+          "title": "Token Url",
+          "type": "string"
+        },
+        "type": {
+          "const": "oauth2_client_credentials",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "token_url",
+        "client_id",
+        "client_secret"
+      ],
+      "title": "OAuth2ClientCredentials",
+      "type": "object"
+    },
+    "OpenAPIConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "description": "Path (relative to the project) or URL of the OpenAPI document.",
+          "title": "Source",
+          "type": "string"
+        },
+        "validate_responses": {
+          "default": true,
+          "title": "Validate Responses",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "title": "OpenAPIConfig",
+      "type": "object"
+    },
+    "ServiceConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "auth": {
+          "anyOf": [
+            {
+              "discriminator": {
+                "mapping": {
+                  "api_key": "#/$defs/ApiKeyAuth",
+                  "basic": "#/$defs/BasicAuth",
+                  "bearer": "#/$defs/BearerAuth",
+                  "oauth2_client_credentials": "#/$defs/OAuth2ClientCredentials"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/BearerAuth"
+                },
+                {
+                  "$ref": "#/$defs/BasicAuth"
+                },
+                {
+                  "$ref": "#/$defs/ApiKeyAuth"
+                },
+                {
+                  "$ref": "#/$defs/OAuth2ClientCredentials"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Auth"
+        },
+        "base_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Url"
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Headers",
+          "type": "object"
+        },
+        "interval": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+                  "type": "string"
+                },
+                {
+                  "minimum": 0,
+                  "type": "number"
+                }
+              ],
+              "description": "Duration, e.g. '500ms', '10s', '1m', '2h' (a number means seconds)."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Interval"
+        },
+        "links": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "e.g. {status: ..., docs: ...}",
+          "title": "Links",
+          "type": "object"
+        },
+        "notify": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notify"
+        },
+        "retries": {
+          "anyOf": [
+            {
+              "maximum": 10,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Retries"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "timeout": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+                  "type": "string"
+                },
+                {
+                  "minimum": 0,
+                  "type": "number"
+                }
+              ],
+              "description": "Duration, e.g. '500ms', '10s', '1m', '2h' (a number means seconds)."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout"
+        },
+        "vars": {
+          "additionalProperties": true,
+          "title": "Vars",
+          "type": "object"
+        }
+      },
+      "title": "ServiceConfig",
+      "type": "object"
+    }
+  },
+  "$id": "https://raw.githubusercontent.com/jsxd3v/api-qovrix/main/schema/api-qovrix.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "allowed_hosts": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional allowlist of hosts monitors may call (e.g. 'api.example.com', '*.internal').",
+      "title": "Allowed Hosts"
+    },
+    "default_environment": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Default Environment"
+    },
+    "defaults": {
+      "$ref": "#/$defs/Defaults"
+    },
+    "environments": {
+      "additionalProperties": {
+        "$ref": "#/$defs/Environment"
+      },
+      "title": "Environments",
+      "type": "object"
+    },
+    "include": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Include",
+      "type": "array"
+    },
+    "notifiers": {
+      "additionalProperties": {
+        "$ref": "#/$defs/NotifierConfig"
+      },
+      "title": "Notifiers",
+      "type": "object"
+    },
+    "openapi": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/OpenAPIConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "project": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Project"
+    },
+    "redact": {
+      "description": "Extra JSON keys to mask in reports and baselines.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Redact",
+      "type": "array"
+    },
+    "secrets": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "NAME: ${env:VARIABLE}. Values never live in this file.",
+      "title": "Secrets",
+      "type": "object"
+    },
+    "services": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ServiceConfig"
+      },
+      "title": "Services",
+      "type": "object"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "title": "api-qovrix project config (api-qovrix.yaml)",
+  "type": "object"
+}

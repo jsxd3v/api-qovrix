@@ -1,0 +1,218 @@
+{
+  "monitor": "user",
+  "steps": {
+    "main": {
+      "accepted": false,
+      "samples": 5,
+      "shape": {
+        "objects": 5,
+        "props": {
+          "address": {
+            "n": 5,
+            "node": {
+              "objects": 5,
+              "props": {
+                "city": {
+                  "n": 5,
+                  "node": {
+                    "strings": 5,
+                    "types": {
+                      "string": 5
+                    },
+                    "values": [
+                      "d42388539e4d"
+                    ]
+                  }
+                },
+                "geo": {
+                  "n": 5,
+                  "node": {
+                    "objects": 5,
+                    "props": {
+                      "lat": {
+                        "n": 5,
+                        "node": {
+                          "strings": 5,
+                          "types": {
+                            "string": 5
+                          },
+                          "values": [
+                            "93a5c9a157e6"
+                          ]
+                        }
+                      },
+                      "lng": {
+                        "n": 5,
+                        "node": {
+                          "strings": 5,
+                          "types": {
+                            "string": 5
+                          },
+                          "values": [
+                            "8c427ff637d6"
+                          ]
+                        }
+                      }
+                    },
+                    "types": {
+                      "object": 5
+                    }
+                  }
+                },
+                "street": {
+                  "n": 5,
+                  "node": {
+                    "strings": 5,
+                    "types": {
+                      "string": 5
+                    },
+                    "values": [
+                      "3b1e39db638d"
+                    ]
+                  }
+                },
+                "suite": {
+                  "n": 5,
+                  "node": {
+                    "strings": 5,
+                    "types": {
+                      "string": 5
+                    },
+                    "values": [
+                      "0f1ab6ef7322"
+                    ]
+                  }
+                },
+                "zipcode": {
+                  "n": 5,
+                  "node": {
+                    "strings": 5,
+                    "types": {
+                      "string": 5
+                    },
+                    "values": [
+                      "f3175ba0dc05"
+                    ]
+                  }
+                }
+              },
+              "types": {
+                "object": 5
+              }
+            }
+          },
+          "company": {
+            "n": 5,
+            "node": {
+              "objects": 5,
+              "props": {
+                "bs": {
+                  "n": 5,
+                  "node": {
+                    "strings": 5,
+                    "types": {
+                      "string": 5
+                    },
+                    "values": [
+                      "c3b25571d2d1"
+                    ]
+                  }
+                },
+                "catchPhrase": {
+                  "n": 5,
+                  "node": {
+                    "strings": 5,
+                    "types": {
+                      "string": 5
+                    },
+                    "values": [
+                      "feaf3aba0b40"
+                    ]
+                  }
+                },
+                "name": {
+                  "n": 5,
+                  "node": {
+                    "strings": 5,
+                    "types": {
+                      "string": 5
+                    },
+                    "values": null
+                  }
+                }
+              },
+              "types": {
+                "object": 5
+              }
+            }
+          },
+          "email": {
+            "n": 5,
+            "node": {
+              "strings": 5,
+              "types": {
+                "string": 5
+              },
+              "values": null
+            }
+          },
+          "id": {
+            "n": 5,
+            "node": {
+              "types": {
+                "integer": 5
+              }
+            }
+          },
+          "name": {
+            "n": 5,
+            "node": {
+              "strings": 5,
+              "types": {
+                "string": 5
+              },
+              "values": null
+            }
+          },
+          "phone": {
+            "n": 5,
+            "node": {
+              "strings": 5,
+              "types": {
+                "string": 5
+              },
+              "values": null
+            }
+          },
+          "username": {
+            "n": 5,
+            "node": {
+              "strings": 5,
+              "types": {
+                "string": 5
+              },
+              "values": null
+            }
+          },
+          "website": {
+            "n": 5,
+            "node": {
+              "strings": 5,
+              "types": {
+                "string": 5
+              },
+              "values": [
+                "ac531597a0e3"
+              ]
+            }
+          }
+        },
+        "types": {
+          "object": 5
+        }
+      },
+      "updated_at": "2026-11-03T16:02:04+00:00"
+    }
+  },
+  "version": 1
+}

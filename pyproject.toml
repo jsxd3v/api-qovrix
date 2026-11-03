@@ -1,0 +1,101 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "api-qovrix"
+version = "0.1.0"
+description = "Contract-aware API monitoring: catches breaking changes, not just downtime. Monitors live in Git and run the same in CI and production."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+authors = [{ name = "jsxd3v" }]
+keywords = ["api", "monitoring", "openapi", "contract-testing", "schema-drift", "uptime", "ci"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Testing",
+    "Topic :: System :: Monitoring",
+    "Typing :: Typed",
+]
+dependencies = [
+    "httpx[http2]>=0.27",
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
+    "ruamel.yaml>=0.18",
+    "jinja2>=3.1",
+    "jsonschema>=4.22",
+    "jsonpath-ng>=1.6",
+    "typer>=0.12",
+    "rich>=13.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5.0",
+    "respx>=0.21",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "types-PyYAML",
+    "types-jsonschema",
+]
+
+[project.scripts]
+api-qovrix = "api_qovrix.cli.app:main"
+
+[project.urls]
+Homepage = "https://github.com/jsxd3v/api-qovrix"
+Issues = "https://github.com/jsxd3v/api-qovrix/issues"
+Changelog = "https://github.com/jsxd3v/api-qovrix/blob/main/CHANGELOG.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/api_qovrix"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src/api_qovrix", "schema", "README.md", "LICENSE", "CHANGELOG.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["api_qovrix"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "S"]
+ignore = ["S101", "RUF012"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+packages = ["api_qovrix"]
+mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = ["jsonpath_ng.*", "ruamel.*"]
+ignore_missing_imports = true

@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/jsxd3v/api-qovrix/main/schema/api-qovrix.schema.json
+# A ready-to-run example against JSONPlaceholder, a free public test API.
+#   cd examples/public-api && api-qovrix run
+version: 1
+project: public-api-example
+
+defaults:
+  timeout: 10s
+  retries: 1
+
+environments:
+  production:
+    base_url: https://jsonplaceholder.typicode.com
+
+# Responses are validated against this spec (a small hand-written one for the example).
+openapi:
+  source: openapi.yaml
+
+include:
+  - monitors/**/*.yaml

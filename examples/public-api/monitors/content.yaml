@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/jsxd3v/api-qovrix/main/schema/monitors.schema.json
+monitors:
+  - name: todo
+    description: A single resource, checked against the OpenAPI spec and the learned shape
+    tags: [smoke]
+    request: { method: GET, url: /todos/1 }
+    assert:
+      - status: 200
+      - response_time_ms: { lt: 3000 }
+      - jsonpath: $.completed
+        type: boolean
+    drift: { enabled: true }
+
+  - name: user
+    request: { method: GET, url: /users/1 }
+    assert:
+      - status: 200
+      - jsonpath: $.address.city
+        not_empty: true
+    drift:
+      enabled: true
+      ignore: ["$.address.geo"]
+
+  - name: post-and-comments
+    description: A flow that passes a value from one step to the next
+    steps:
+      - name: create-post
+        request:
+          method: POST
+          url: /posts
+          json: { title: hello, body: from api-qovrix, userId: 1 }
+        assert:
+          - status: 201
+        extract:
+          post_id: $.id
+      - name: comments
+        request: { method: GET, url: /posts/1/comments }
+        assert:
+          - status: 200
+          - jsonpath: $[*].postId
+            contains: 1

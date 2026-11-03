@@ -1,0 +1,21 @@
+site_name: api-qovrix
+site_description: Self-hosted API monitoring that catches breaking changes, not just downtime.
+repo_url: https://github.com/jsxd3v/api-qovrix
+edit_uri: edit/main/docs/
+theme:
+  name: material
+  features: [content.code.copy, navigation.sections]
+markdown_extensions:
+  - admonition
+  - tables
+  - pymdownx.superfences
+  - pymdownx.highlight
+nav:
+  - Home: index.md
+  - Getting started: getting-started.md
+  - Configuration: configuration.md
+  - Monitors: monitors.md
+  - Drift detection: drift.md
+  - OpenAPI: openapi.md
+  - CI, Docker and reports: ci.md
+  - CLI reference: cli.md

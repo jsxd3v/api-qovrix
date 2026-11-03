@@ -1,0 +1,1184 @@
+{
+  "$defs": {
+    "ApiKeyAuth": {
+      "additionalProperties": false,
+      "properties": {
+        "in": {
+          "default": "header",
+          "enum": [
+            "header",
+            "query"
+          ],
+          "title": "In",
+          "type": "string"
+        },
+        "name": {
+          "description": "Header or query parameter name, e.g. 'X-API-Key'.",
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "const": "api_key",
+          "title": "Type",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "name",
+        "value"
+      ],
+      "title": "ApiKeyAuth",
+      "type": "object"
+    },
+    "Assertion": {
+      "additionalProperties": false,
+      "description": "One check. Exactly one target: status, response_time_ms, jsonpath, header, body or json_schema.",
+      "properties": {
+        "body": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BodyCheck"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "contains": {
+          "default": null,
+          "title": "Contains"
+        },
+        "equals": {
+          "default": null,
+          "title": "Equals"
+        },
+        "exists": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exists"
+        },
+        "gt": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gt"
+        },
+        "gte": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gte"
+        },
+        "header": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Response header name (case-insensitive).",
+          "title": "Header"
+        },
+        "in": {
+          "anyOf": [
+            {
+              "items": {},
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "In"
+        },
+        "json_schema": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Inline JSON Schema, or a path to a schema file relative to the project root.",
+          "title": "Json Schema"
+        },
+        "jsonpath": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "JSONPath into the response body, e.g. $.data[0].id",
+          "title": "Jsonpath"
+        },
+        "length": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Length"
+        },
+        "lt": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lt"
+        },
+        "lte": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lte"
+        },
+        "matches": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Matches"
+        },
+        "not_contains": {
+          "default": null,
+          "title": "Not Contains"
+        },
+        "not_empty": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Not Empty"
+        },
+        "not_equals": {
+          "default": null,
+          "title": "Not Equals"
+        },
+        "not_in": {
+          "anyOf": [
+            {
+              "items": {},
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Not In"
+        },
+        "response_time_ms": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Comparison"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Upper limit in ms, or {lt|lte|gt|gte|eq: ms}.",
+          "title": "Response Time Ms"
+        },
+        "status": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "200, '2xx' or a list like [200, 201].",
+          "title": "Status"
+        },
+        "type": {
+          "anyOf": [
+            {
+              "enum": [
+                "string",
+                "integer",
+                "number",
+                "boolean",
+                "array",
+                "object",
+                "null"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Type"
+        }
+      },
+      "title": "Assertion",
+      "type": "object"
+    },
+    "BasicAuth": {
+      "additionalProperties": false,
+      "properties": {
+        "password": {
+          "title": "Password",
+          "type": "string"
+        },
+        "type": {
+          "const": "basic",
+          "title": "Type",
+          "type": "string"
+        },
+        "username": {
+          "title": "Username",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "username",
+        "password"
+      ],
+      "title": "BasicAuth",
+      "type": "object"
+    },
+    "BearerAuth": {
+      "additionalProperties": false,
+      "properties": {
+        "token": {
+          "title": "Token",
+          "type": "string"
+        },
+        "type": {
+          "const": "bearer",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "token"
+      ],
+      "title": "BearerAuth",
+      "type": "object"
+    },
+    "BodyCheck": {
+      "additionalProperties": false,
+      "properties": {
+        "contains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Contains"
+        },
+        "matches": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Matches"
+        },
+        "not_contains": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Not Contains"
+        }
+      },
+      "title": "BodyCheck",
+      "type": "object"
+    },
+    "Comparison": {
+      "additionalProperties": false,
+      "properties": {
+        "eq": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Eq"
+        },
+        "gt": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gt"
+        },
+        "gte": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Gte"
+        },
+        "lt": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lt"
+        },
+        "lte": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lte"
+        }
+      },
+      "title": "Comparison",
+      "type": "object"
+    },
+    "DriftConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "fail_on": {
+          "default": "breaking",
+          "enum": [
+            "breaking",
+            "warning",
+            "never"
+          ],
+          "title": "Fail On",
+          "type": "string"
+        },
+        "ignore": {
+          "description": "JSONPaths to skip, e.g. '$.meta.request_id' or '$..updated_at'.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Ignore",
+          "type": "array"
+        },
+        "min_samples": {
+          "default": 5,
+          "description": "Samples needed before the learned shape is trusted.",
+          "minimum": 1,
+          "title": "Min Samples",
+          "type": "integer"
+        }
+      },
+      "title": "DriftConfig",
+      "type": "object"
+    },
+    "Monitor": {
+      "additionalProperties": false,
+      "properties": {
+        "assert": {
+          "items": {
+            "$ref": "#/$defs/Assertion"
+          },
+          "title": "Assert",
+          "type": "array"
+        },
+        "auth": {
+          "anyOf": [
+            {
+              "discriminator": {
+                "mapping": {
+                  "api_key": "#/$defs/ApiKeyAuth",
+                  "basic": "#/$defs/BasicAuth",
+                  "bearer": "#/$defs/BearerAuth",
+                  "oauth2_client_credentials": "#/$defs/OAuth2ClientCredentials"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/BearerAuth"
+                },
+                {
+                  "$ref": "#/$defs/BasicAuth"
+                },
+                {
+                  "$ref": "#/$defs/ApiKeyAuth"
+                },
+                {
+                  "$ref": "#/$defs/OAuth2ClientCredentials"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Auth"
+        },
+        "base_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Url"
+        },
+        "cron": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cron"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "drift": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DriftConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "extract": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Extract",
+          "type": "object"
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Headers",
+          "type": "object"
+        },
+        "interval": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+                  "type": "string"
+                },
+                {
+                  "minimum": 0,
+                  "type": "number"
+                }
+              ],
+              "description": "Duration, e.g. '500ms', '10s', '1m', '2h' (a number means seconds)."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Interval"
+        },
+        "name": {
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "notify": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notify"
+        },
+        "openapi": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Validate responses against the project's OpenAPI spec.",
+          "title": "Openapi"
+        },
+        "request": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Request"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "retries": {
+          "anyOf": [
+            {
+              "maximum": 10,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Retries"
+        },
+        "service": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Defaults to the monitor file's name.",
+          "title": "Service"
+        },
+        "steps": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Step"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Steps"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "timeout": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+                  "type": "string"
+                },
+                {
+                  "minimum": 0,
+                  "type": "number"
+                }
+              ],
+              "description": "Duration, e.g. '500ms', '10s', '1m', '2h' (a number means seconds)."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout"
+        },
+        "vars": {
+          "additionalProperties": true,
+          "title": "Vars",
+          "type": "object"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "Monitor",
+      "type": "object"
+    },
+    "OAuth2ClientCredentials": {
+      "additionalProperties": false,
+      "properties": {
+        "audience": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Audience"
+        },
+        "client_auth": {
+          "default": "basic",
+          "description": "Send client credentials as HTTP basic auth (default) or in the form body.",
+          "enum": [
+            "basic",
+            "post"
+          ],
+          "title": "Client Auth",
+          "type": "string"
+        },
+        "client_id": {
+          "title": "Client Id",
+          "type": "string"
+        },
+        "client_secret": {
+          "title": "Client Secret",
+          "type": "string"
+        },
+        "extra_params": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Extra Params",
+          "type": "object"
+        },
+        "scope": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Scope"
+        },
+        "token_url": {
+          "title": "Token Url",
+          "type": "string"
+        },
+        "type": {
+          "const": "oauth2_client_credentials",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "token_url",
+        "client_id",
+        "client_secret"
+      ],
+      "title": "OAuth2ClientCredentials",
+      "type": "object"
+    },
+    "Request": {
+      "additionalProperties": false,
+      "properties": {
+        "auth": {
+          "anyOf": [
+            {
+              "discriminator": {
+                "mapping": {
+                  "api_key": "#/$defs/ApiKeyAuth",
+                  "basic": "#/$defs/BasicAuth",
+                  "bearer": "#/$defs/BearerAuth",
+                  "oauth2_client_credentials": "#/$defs/OAuth2ClientCredentials"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/BearerAuth"
+                },
+                {
+                  "$ref": "#/$defs/BasicAuth"
+                },
+                {
+                  "$ref": "#/$defs/ApiKeyAuth"
+                },
+                {
+                  "$ref": "#/$defs/OAuth2ClientCredentials"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Auth"
+        },
+        "body": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Body"
+        },
+        "follow_redirects": {
+          "default": true,
+          "title": "Follow Redirects",
+          "type": "boolean"
+        },
+        "form": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Form"
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Headers",
+          "type": "object"
+        },
+        "json": {
+          "default": null,
+          "title": "Json"
+        },
+        "method": {
+          "default": "GET",
+          "title": "Method",
+          "type": "string"
+        },
+        "params": {
+          "additionalProperties": true,
+          "description": "Query string parameters.",
+          "title": "Params",
+          "type": "object"
+        },
+        "timeout": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+                  "type": "string"
+                },
+                {
+                  "minimum": 0,
+                  "type": "number"
+                }
+              ],
+              "description": "Duration, e.g. '500ms', '10s', '1m', '2h' (a number means seconds)."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout"
+        },
+        "url": {
+          "description": "Full URL, or a path joined to the service/environment base_url.",
+          "title": "Url",
+          "type": "string"
+        },
+        "verify_tls": {
+          "default": true,
+          "title": "Verify Tls",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "Request",
+      "type": "object"
+    },
+    "ServiceConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "auth": {
+          "anyOf": [
+            {
+              "discriminator": {
+                "mapping": {
+                  "api_key": "#/$defs/ApiKeyAuth",
+                  "basic": "#/$defs/BasicAuth",
+                  "bearer": "#/$defs/BearerAuth",
+                  "oauth2_client_credentials": "#/$defs/OAuth2ClientCredentials"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/BearerAuth"
+                },
+                {
+                  "$ref": "#/$defs/BasicAuth"
+                },
+                {
+                  "$ref": "#/$defs/ApiKeyAuth"
+                },
+                {
+                  "$ref": "#/$defs/OAuth2ClientCredentials"
+                }
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Auth"
+        },
+        "base_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Base Url"
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Headers",
+          "type": "object"
+        },
+        "interval": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+                  "type": "string"
+                },
+                {
+                  "minimum": 0,
+                  "type": "number"
+                }
+              ],
+              "description": "Duration, e.g. '500ms', '10s', '1m', '2h' (a number means seconds)."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Interval"
+        },
+        "links": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "e.g. {status: ..., docs: ...}",
+          "title": "Links",
+          "type": "object"
+        },
+        "notify": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notify"
+        },
+        "retries": {
+          "anyOf": [
+            {
+              "maximum": 10,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Retries"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "timeout": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+                  "type": "string"
+                },
+                {
+                  "minimum": 0,
+                  "type": "number"
+                }
+              ],
+              "description": "Duration, e.g. '500ms', '10s', '1m', '2h' (a number means seconds)."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout"
+        },
+        "vars": {
+          "additionalProperties": true,
+          "title": "Vars",
+          "type": "object"
+        }
+      },
+      "title": "ServiceConfig",
+      "type": "object"
+    },
+    "Step": {
+      "additionalProperties": false,
+      "properties": {
+        "always_run": {
+          "default": false,
+          "description": "Run even when an earlier step failed (cleanup).",
+          "title": "Always Run",
+          "type": "boolean"
+        },
+        "assert": {
+          "items": {
+            "$ref": "#/$defs/Assertion"
+          },
+          "title": "Assert",
+          "type": "array"
+        },
+        "drift": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DriftConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "extract": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Save values for later steps: JSONPath ('$.id') or 'header:<name>'.",
+          "title": "Extract",
+          "type": "object"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "request": {
+          "$ref": "#/$defs/Request"
+        }
+      },
+      "required": [
+        "name",
+        "request"
+      ],
+      "title": "Step",
+      "type": "object"
+    }
+  },
+  "$id": "https://raw.githubusercontent.com/jsxd3v/api-qovrix/main/schema/monitors.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A file under monitors/. May define its own service (named after the file).",
+  "properties": {
+    "monitors": {
+      "items": {
+        "$ref": "#/$defs/Monitor"
+      },
+      "title": "Monitors",
+      "type": "array"
+    },
+    "service": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ServiceConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "title": "api-qovrix monitor file (monitors/*.yaml)",
+  "type": "object"
+}

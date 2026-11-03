@@ -1,0 +1,23 @@
+name: Bug report
+description: Something doesn't work as documented
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you expected, and what happened instead. Include the command and its output.
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Monitor / config (remove secrets and private URLs)
+      render: yaml
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `api-qovrix --version`, and how you installed it (binary, Docker, pip)
+    validations:
+      required: true

@@ -1,0 +1,55 @@
+{
+  "monitor": "todo",
+  "steps": {
+    "main": {
+      "accepted": false,
+      "samples": 5,
+      "shape": {
+        "objects": 5,
+        "props": {
+          "completed": {
+            "n": 5,
+            "node": {
+              "types": {
+                "boolean": 5
+              }
+            }
+          },
+          "id": {
+            "n": 5,
+            "node": {
+              "types": {
+                "integer": 5
+              }
+            }
+          },
+          "title": {
+            "n": 5,
+            "node": {
+              "strings": 5,
+              "types": {
+                "string": 5
+              },
+              "values": [
+                "a890405fcc34"
+              ]
+            }
+          },
+          "userId": {
+            "n": 5,
+            "node": {
+              "types": {
+                "integer": 5
+              }
+            }
+          }
+        },
+        "types": {
+          "object": 5
+        }
+      },
+      "updated_at": "2026-11-03T16:16:07+00:00"
+    }
+  },
+  "version": 1
+}
