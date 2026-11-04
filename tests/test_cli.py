@@ -118,3 +118,21 @@ def test_import_openapi_adds_secrets_section_and_reports_bad_config(tmp_path):
     (tmp_path / "api-qovrix.yaml").write_text("version: 1\nsecrets: [oops]\n")
     r = invoke("import", "openapi", "openapi.json", "--force", cwd=tmp_path)
     assert r.exit_code == 2 and "could not update" in r.output
+
+
+def test_legacy_console_encoding_does_not_crash(tmp_path):
+    """Windows pipes default to cp1252, which has no ✔; output must still work."""
+    import os
+    import subprocess
+    import sys
+
+    env = {**os.environ, "PYTHONIOENCODING": "cp1252"}
+    invoke("init", cwd=tmp_path)
+    r = subprocess.run(
+        [sys.executable, "-m", "api_qovrix", "validate"],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+    )
+    assert r.returncode == 0, r.stderr.decode(errors="replace")
+    assert "✔" in r.stdout.decode("utf-8")

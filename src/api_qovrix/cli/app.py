@@ -441,7 +441,16 @@ def schema(
         sys.stdout.write(json.dumps(json_schemas(), indent=2, sort_keys=True) + "\n")
 
 
+def _utf8_output() -> None:
+    """Windows uses a legacy code page (e.g. cp1252) for piped output, which can't encode ✔ or →."""
+    for stream in (sys.stdout, sys.stderr):
+        encoding = (getattr(stream, "encoding", None) or "").lower().replace("-", "")
+        if encoding != "utf8" and hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 def main() -> None:
+    _utf8_output()
     try:
         app()
     except KeyboardInterrupt:
