@@ -4,7 +4,7 @@
 
 ```yaml
 - uses: actions/checkout@v4
-- uses: jsxd3v/api-qovrix@v1
+- uses: jsxd3v/api-qovrix@v0
   with:
     working-directory: monitoring   # folder with api-qovrix.yaml (default: .)
     env: staging

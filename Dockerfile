@@ -12,6 +12,7 @@ LABEL org.opencontainers.image.title="api-qovrix" \
       org.opencontainers.image.source="https://github.com/jsxd3v/api-qovrix" \
       org.opencontainers.image.licenses="Apache-2.0"
 COPY --from=build /opt/venv /opt/venv
+COPY LICENSE NOTICE THIRD_PARTY_NOTICES.md /usr/share/doc/api-qovrix/
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1

@@ -35,7 +35,7 @@ Java, C#, Ruby or Python. Monitors are YAML files; **you don't need Python** unl
 | Any laptop (macOS, Linux) | `curl -fsSL https://github.com/jsxd3v/api-qovrix/releases/latest/download/install.sh \| sh` |
 | Windows | Download `api-qovrix-windows-x64.exe` from [Releases](https://github.com/jsxd3v/api-qovrix/releases) |
 | Docker | `docker run --rm -v "$PWD:/work" ghcr.io/jsxd3v/api-qovrix run` |
-| GitHub Actions | `uses: jsxd3v/api-qovrix@v1` ([see below](#in-ci)) |
+| GitHub Actions | `uses: jsxd3v/api-qovrix@v0` ([see below](#in-ci)) |
 | Python | `pip install api-qovrix` |
 
 ## Quickstart
@@ -132,7 +132,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: jsxd3v/api-qovrix@v1
+      - uses: jsxd3v/api-qovrix@v0
         with:
           env: staging
         env:

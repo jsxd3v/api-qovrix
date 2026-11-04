@@ -18,10 +18,19 @@ jobs:
           version=$(grep -m1 '^version' pyproject.toml | cut -d'"' -f2)
           [ "v$version" = "${GITHUB_REF_NAME}" ] || { echo "tag ${GITHUB_REF_NAME} != v$version"; exit 1; }
       - run: uv build
+      - name: Third-party notices (from a clean runtime install)
+        run: |
+          uv venv /tmp/notices --python 3.12
+          VIRTUAL_ENV=/tmp/notices uv pip install dist/*.whl
+          /tmp/notices/bin/python scripts/third_party_notices.py > THIRD_PARTY_NOTICES.md
       - uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: notices
+          path: THIRD_PARTY_NOTICES.md
 
   binaries:
     runs-on: ${{ matrix.os }}
@@ -124,7 +133,7 @@ jobs:
         run: |
           mkdir release
           cp artifacts/bin-*/* artifacts/dist/* release/
-          cp scripts/install.sh release/
+          cp scripts/install.sh artifacts/notices/THIRD_PARTY_NOTICES.md LICENSE NOTICE release/
           cd release && sha256sum * > SHA256SUMS
       - name: Release notes from CHANGELOG.md
         run: |
@@ -134,3 +143,8 @@ jobs:
         with:
           body_path: notes.md
           files: release/*
+      - name: Move the major-version tag (e.g. v0) for the GitHub Action
+        run: |
+          major="${GITHUB_REF_NAME%%.*}"
+          git tag -f "$major" "$GITHUB_SHA"
+          git push -f origin "refs/tags/$major"

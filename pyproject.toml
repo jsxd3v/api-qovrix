@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Contract-aware API monitoring: catches breaking changes, not just downtime. Monitors live in Git and run the same in CI and production."
 readme = "README.md"
 license = "Apache-2.0"
-license-files = ["LICENSE"]
+license-files = ["LICENSE", "NOTICE"]
 requires-python = ">=3.12"
 authors = [{ name = "jsxd3v" }]
 keywords = ["api", "monitoring", "openapi", "contract-testing", "schema-drift", "uptime", "ci"]
@@ -61,7 +61,7 @@ Changelog = "https://github.com/jsxd3v/api-qovrix/blob/main/CHANGELOG.md"
 packages = ["src/api_qovrix"]
 
 [tool.hatch.build.targets.sdist]
-include = ["src/api_qovrix", "schema", "README.md", "LICENSE", "CHANGELOG.md"]
+include = ["src/api_qovrix", "schema", "README.md", "LICENSE", "NOTICE", "THIRD_PARTY_NOTICES.md", "CHANGELOG.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

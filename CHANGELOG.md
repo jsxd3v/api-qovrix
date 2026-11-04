@@ -5,7 +5,7 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.1.0] - Unreleased
+## [0.1.0] - 2026-11-04
 
 First release: "CI and contracts".
 
@@ -22,3 +22,6 @@ First release: "CI and contracts".
 - Secrets from environment variables only, masked in all output; optional `allowed_hosts`.
 - JSON Schema for `api-qovrix.yaml` and monitor files.
 - Docker image, GitHub Action, standalone binaries and an install script.
+
+[Unreleased]: https://github.com/jsxd3v/api-qovrix/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/jsxd3v/api-qovrix/releases/tag/v0.1.0
