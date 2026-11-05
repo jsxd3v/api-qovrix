@@ -115,15 +115,16 @@ it works the same whether your API runs on a VPS, in containers or on a serverle
   New fields are `info`, optional fields are recognised, and volatile paths can be ignored, so it stays quiet
   when nothing important changed.
 - **Baselines in Git, like snapshot tests.** Shapes are stored in `.api-qovrix/baselines/`, reviewed in pull
-  requests, and updated with `--update-baselines` or `api-qovrix drift accept`. They contain types and counts
-  only: response values are never written to them.
+  requests, and updated with `--update-baselines` or `api-qovrix drift accept`. They hold types, presence
+  counts and short one-way fingerprints of enum-like values, never the raw response values.
 - **OpenAPI validation.** Every response is checked against your spec (3.0 and 3.1). `import openapi`
   generates monitors for safe (GET/HEAD) operations.
 
 **Write checks**
 
 - **Multi-step flows** with values passed between steps, cleanup steps that always run, and retries.
-- **Auth:** bearer, basic, API key (header or query) and OAuth2 client credentials with token caching.
+- **Auth:** bearer, basic, API key (header or query), OAuth2 client credentials, and a shared login
+  (`token_request`) for any API that hands out a token: one sign-in, reused by every monitor until it expires.
 - **Assertions:** status, response time, headers, body text, JSON Schema and JSONPath with `equals`, `in`,
   `contains`, `matches`, `gt`/`lt`, `length`, `type`, `exists`, `not_empty` and more.
 - **Services:** monitors grouped per API, with shared base URL, auth, headers and status-page links.
@@ -133,16 +134,18 @@ it works the same whether your API runs on a VPS, in containers or on a serverle
 
 - **CI-ready:** exit codes, JUnit XML, JSON, a self-contained HTML report (`--html`), a GitHub Action, a
   Docker image and standalone binaries.
-- **Continuous monitoring:** `serve` keeps history in SQLite and alerts when a monitor goes down or recovers,
-  grouped per service, with optional reminders.
+- **Continuous monitoring:** `serve` runs monitors on an interval or a cron schedule ("08:00 on weekdays"),
+  keeps history in SQLite, alerts when a monitor goes down or recovers (grouped per service, with optional
+  reminders) and reloads monitor files when they change.
+- **Monitoring the monitor:** `/healthz` for outside uptime checks, and heartbeat pings so you're told if the
+  monitoring server itself goes down.
 - **Dashboard and REST API:** status per service and monitor, 24-hour uptime, response-time charts, run
   details with drift diffs, incidents and "Run now". Password-protected, with no external scripts.
 - **Alerts by email or webhook,** from CI (`run --notify`) or from `serve`.
 
 **Coming next**
 
-- Learned latency baselines, `Deprecation` / `Sunset` / rate-limit / TLS-expiry warnings, a public status
-  page and metrics export.
+- Learned latency baselines, `Deprecation` / `Sunset` / rate-limit / TLS-expiry warnings, and metrics export.
 
 ## In CI
 

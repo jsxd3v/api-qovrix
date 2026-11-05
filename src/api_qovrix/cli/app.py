@@ -333,8 +333,11 @@ def serve(
     storage = _storage(project, data_dir)
 
     async def main() -> None:
+        def reload_project() -> Project:
+            return load_project(project.config_path, env, env_file)
+
         try:
-            server = Server(project, storage, log=log)
+            server = Server(project, storage, log=log, reloader=reload_project)
         except QovrixError as exc:
             raise _fail(str(exc)) from None
         if once:
@@ -787,6 +790,12 @@ def selftest() -> None:
 
         if "run report" not in render_html(RunSummary([], None, 0.0), "selftest"):
             failures.append("HTML report template missing")
+        from api_qovrix.server.cron import CronError, timezone
+
+        try:
+            timezone("Asia/Manila")
+        except CronError:
+            failures.append("time zone data missing (cron schedules would fail)")
         return failures
 
     with tempfile.TemporaryDirectory() as tmp:

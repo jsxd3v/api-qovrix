@@ -54,7 +54,7 @@ def _templates() -> Environment:
 
 
 def create_app(server: Server, auth: Auth, clock: Any = None) -> FastAPI:
-    project, storage = server.project, server.storage
+    storage = server.storage  # server.project is read on every request: it changes when monitors reload
     now = clock or (lambda: datetime.now(UTC).replace(microsecond=0))
     templates = _templates()
     app = FastAPI(
@@ -99,8 +99,8 @@ def create_app(server: Server, auth: Auth, clock: Any = None) -> FastAPI:
     def render(name: str, request: Request, **ctx: Any) -> HTMLResponse:
         page = templates.get_template(name).render(
             request=request,
-            project=project.config.project or "api-qovrix",
-            environment=project.environment,
+            project=server.project.config.project or "api-qovrix",
+            environment=server.project.environment,
             login_required=not auth.open,
             path=request.url.path,
             **ctx,
@@ -108,7 +108,7 @@ def create_app(server: Server, auth: Auth, clock: Any = None) -> FastAPI:
         return HTMLResponse(page)
 
     def find(name: str) -> Any:
-        for m in project.monitors:
+        for m in server.project.monitors:
             if m.name == name:
                 return m
         raise HTTPException(404, f"no monitor named '{name}'")
@@ -154,7 +154,7 @@ def create_app(server: Server, auth: Auth, clock: Any = None) -> FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     async def overview_page(request: Request) -> Response:
-        services = await data.overview(project, storage, now())
+        services = await data.overview(server.project, storage, now())
         incidents = await storage.incidents(open_only=True)
         return render(
             "overview.html",
@@ -217,23 +217,26 @@ def create_app(server: Server, auth: Auth, clock: Any = None) -> FastAPI:
     # ------------------------------------------------------------------ REST API
 
     @app.get("/healthz")
-    async def healthz() -> dict[str, Any]:
-        return {"status": "ok", "version": __version__, "time": now_iso()}
+    async def healthz() -> JSONResponse:
+        """For uptime checks from outside: 503 when the scheduler is not running."""
+        health = server.health() if server.started_at else {"status": "ok"}
+        body = {**health, "version": __version__, "time": now_iso()}
+        return JSONResponse(body, status_code=200 if body["status"] == "ok" else 503)
 
     @app.get("/api/v1/services")
     async def api_services() -> dict[str, Any]:
-        services = await data.overview(project, storage, now(), charts=False)
+        services = await data.overview(server.project, storage, now(), charts=False)
         return {"services": [s.api() for s in services], "counts": data.counts(services)}
 
     @app.get("/api/v1/monitors")
     async def api_monitors(service: str | None = None) -> dict[str, Any]:
-        services = await data.overview(project, storage, now(), charts=False)
+        services = await data.overview(server.project, storage, now(), charts=False)
         return {"monitors": [m.api() for s in services for m in s.monitors if service in (None, s.name)]}
 
     @app.get("/api/v1/monitors/{name}")
     async def api_monitor(name: str) -> dict[str, Any]:
         find(name)
-        services = await data.overview(project, storage, now(), charts=False)
+        services = await data.overview(server.project, storage, now(), charts=False)
         view = next(m for s in services for m in s.monitors if m.name == name)
         return {"monitor": view.api(), "runs": await storage.history(name, 20)}
 

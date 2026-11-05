@@ -56,7 +56,10 @@ monitors:
         request: { method: DELETE, url: "/carts/{{ steps.create-cart.cart_id }}" }
 ```
 
-Each step can also have its own `drift:` settings.
+Each step can also have its own `drift:` settings and a `description`.
+
+If every monitor of a service needs the same login, don't repeat a login step in each one: use
+`token_request` auth on the service (below), so they share one login.
 
 ## Auth
 
@@ -78,6 +81,41 @@ auth:
 ```
 
 OAuth2 tokens are fetched once per run and refreshed shortly before they expire.
+
+### Shared login (`token_request`)
+
+For APIs where you sign in with a request that returns a token (email and password, a session endpoint, a
+custom auth service), describe that login once. api-qovrix calls it the first time a monitor needs it,
+reuses the token for every monitor with the same login, and logs in again shortly before it expires.
+
+```yaml
+# monitors/app.yaml
+service:
+  base_url: "{{ secrets.APP_URL }}"
+  headers: { apikey: "{{ secrets.APP_PUBLIC_KEY }}" }   # sent on every request
+  auth:
+    type: token_request
+    request:
+      method: POST                                      # default
+      url: "{{ secrets.APP_URL }}/auth/v1/token?grant_type=password"
+      headers: { apikey: "{{ secrets.APP_PUBLIC_KEY }}" }
+      json: { email: "{{ secrets.MONITOR_EMAIL }}", password: "{{ secrets.MONITOR_PASSWORD }}" }
+    token: $.access_token        # where the token is in the response (default)
+    expires_in: $.expires_in     # its lifetime in seconds (default); if missing, `lifetime` is used
+    lifetime: 1h                 # default
+    header: Authorization        # default
+    prefix: "Bearer "            # default
+monitors:
+  - name: invoices
+    request: { url: /rest/v1/invoices?limit=1 }
+  - name: journal
+    request: { url: /rest/v1/journal_entries?limit=1 }
+```
+
+Both monitors above share one login. With `serve`, the token is reused across checks until it expires. The
+token and the login's secrets are masked in every report; a failed login shows only the status code.
+
+`{{ ... }}` works in `base_url` too, so a service's address can come from a secret or a variable.
 
 ## Assertions
 

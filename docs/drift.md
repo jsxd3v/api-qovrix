@@ -64,8 +64,11 @@ monitor with a baseline fails when a change reaches `fail_on`.
 
 ## Privacy
 
-Baselines are committed to repositories, so they **never contain response values**: only types, how often
-each field was present, and short one-way hashes of enum-like strings. Fields that look sensitive
+Baselines are committed to repositories, so they **never contain raw response values**. They hold types,
+how often each field was present, and, for short strings with few distinct values (like `status`), short
+one-way fingerprints: the first 12 characters of a SHA-256 hash. That's enough to notice a new enum value
+without storing the value. A fingerprint of a short, guessable value (`"paid"`) can be confirmed by someone
+who guesses it, so don't rely on it to hide secrets. Fields that look sensitive
 (passwords, tokens, keys, emails, phone numbers, names, addresses, cards...) don't even get hashes. Add more
 field names with `redact:` in `api-qovrix.yaml`.
 

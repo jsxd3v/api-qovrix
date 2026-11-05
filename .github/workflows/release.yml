@@ -57,7 +57,7 @@ jobs:
           python -m pip install . pyinstaller
           pyinstaller --onefile --name api-qovrix \
             --collect-data api_qovrix --collect-submodules uvicorn \
-            --collect-data certifi --collect-data jsonschema_specifications \
+            --collect-data certifi --collect-data jsonschema_specifications --collect-data tzdata \
             --copy-metadata api-qovrix src/api_qovrix/__main__.py
       - name: Smoke test
         shell: bash

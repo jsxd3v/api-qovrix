@@ -249,6 +249,13 @@ def load_project(
             project.service_sources[name] = path
         parsed.append((path, mf))
 
+    from api_qovrix.server.cron import Cron, CronError, timezone
+
+    try:
+        timezone(cfg.server.timezone)
+    except CronError as exc:
+        raise ConfigError(f"{config_path}: server.timezone: {exc}") from None
+
     seen: dict[str, Path] = {}
     known_notifiers = set(cfg.notifiers)
     for path, mf in parsed:
@@ -259,6 +266,11 @@ def load_project(
                     f"{path.relative_to(root)}). Monitor names must be unique."
                 )
             seen[mon.name] = path
+            if mon.cron:
+                try:
+                    Cron.parse(mon.cron)
+                except CronError as exc:
+                    raise ConfigError(f"{path.relative_to(root)}: monitor '{mon.name}': {exc}") from None
             resolved = _resolve(mon, path, project, env)
             unknown = [n for n in resolved.notify if n not in known_notifiers]
             if unknown:

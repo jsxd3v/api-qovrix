@@ -80,8 +80,39 @@ class OAuth2ClientCredentials(Model):
     extra_params: dict[str, str] = Field(default_factory=dict)
 
 
+class TokenRequestSpec(Model):
+    """The login call that returns a token."""
+
+    method: str = "POST"
+    url: str
+    headers: dict[str, str] = Field(default_factory=dict)
+    params: dict[str, Any] = Field(default_factory=dict)
+    json_body: Any = Field(None, alias="json")
+    form: dict[str, Any] | None = None
+    timeout: Duration | None = None
+
+
+class TokenRequestAuth(Model):
+    """Log in with any request that returns a token, once, and reuse the token until it expires.
+
+    Use it on a service so all its monitors share one login.
+    """
+
+    type: Literal["token_request"]
+    request: TokenRequestSpec
+    token: str = Field("$.access_token", description="JSONPath to the token in the login response.")
+    expires_in: str | None = Field(
+        "$.expires_in", description="JSONPath to the token lifetime in seconds (missing: use 'lifetime')."
+    )
+    lifetime: Duration = Field(
+        3600.0, description="Token lifetime when the response doesn't say, e.g. '50m'."
+    )
+    header: str = Field("Authorization", description="Header that carries the token.")
+    prefix: str = Field("Bearer ", description="Text before the token in that header.")
+
+
 Auth = Annotated[
-    BearerAuth | BasicAuth | ApiKeyAuth | OAuth2ClientCredentials,
+    BearerAuth | BasicAuth | ApiKeyAuth | OAuth2ClientCredentials | TokenRequestAuth,
     Field(discriminator="type"),
 ]
 
@@ -222,6 +253,7 @@ class DriftConfig(Model):
 
 class Step(Model):
     name: str
+    description: str | None = None
     request: Request
     assertions: list[Assertion] = Field(default_factory=list, alias="assert")
     extract: dict[str, str] = Field(
@@ -242,7 +274,10 @@ class Monitor(Model):
     auth: Auth | None = None
     headers: dict[str, str] = Field(default_factory=dict)
     interval: Duration | None = None
-    cron: str | None = Field(None, description="Not supported yet: use 'interval'.")
+    cron: str | None = Field(
+        None,
+        description="Schedule for `serve` instead of 'interval', e.g. '0 8 * * mon-fri' (server.timezone).",
+    )
     timeout: Duration | None = None
     retries: int | None = Field(None, ge=0, le=10)
     notify: list[str] | None = None
@@ -355,6 +390,15 @@ class WebhookNotifier(Model):
 NotifierConfig = Annotated[EmailNotifier | WebhookNotifier, Field(discriminator="type")]
 
 
+class HeartbeatSettings(Model):
+    """Ping a URL while `serve` is healthy, so an outside service can alert you when the pings stop."""
+
+    url: str | None = Field(None, description="Use ${env:...}: these URLs usually contain a secret token.")
+    interval: Duration = Field(300.0, description="How often to ping, e.g. '5m'.")
+    method: Literal["GET", "POST", "HEAD"] = "GET"
+    timeout: Duration = 10.0
+
+
 class ServerSettings(Model):
     """Settings for `api-qovrix serve`."""
 
@@ -363,6 +407,9 @@ class ServerSettings(Model):
         10.0, description="Wait this long to group changes of the same service into one alert."
     )
     concurrency: int = Field(10, ge=1, le=500, description="Monitors running at the same time.")
+    timezone: str = Field("UTC", description="Time zone for cron schedules, e.g. 'Asia/Manila'.")
+    heartbeat: HeartbeatSettings | None = None
+    watch: bool = Field(True, description="Reload monitor files automatically when they change.")
 
 
 class ProjectConfig(Model):

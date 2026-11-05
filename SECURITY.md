@@ -17,7 +17,8 @@ credit in the release notes if you'd like.
 - Secrets are read from environment variables only. `api-qovrix.yaml` refuses literal secret values.
 - Secret values and OAuth2 tokens are replaced with `***` in terminal output and JSON/JUnit reports.
   Response bodies are never included in reports.
-- Baselines in `.api-qovrix/baselines/` contain types and presence counts only, never response values.
+- Baselines in `.api-qovrix/baselines/` hold types, presence counts and short one-way fingerprints (truncated
+  SHA-256) of enum-like string values, never the raw values. Sensitive-looking fields get no fingerprints.
 - `{{ ... }}` expressions run in a sandboxed Jinja2 environment, so they cannot run code.
 - `allowed_hosts` can restrict which hosts monitors may call.
 - Release binaries come with SHA-256 checksums, and the install script verifies them.

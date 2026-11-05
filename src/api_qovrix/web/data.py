@@ -70,6 +70,7 @@ class MonitorView:
     state: str
     note: str
     interval: str
+    schedule: str
     last_run: str
     last_run_at: str | None
     last_status: str | None
@@ -135,6 +136,7 @@ async def monitor_view(
         state=st.state if st else "unknown",
         note=_note(m, st),
         interval=human_duration(m.interval),
+        schedule=f"cron {m.monitor.cron}" if m.monitor.cron else f"every {human_duration(m.interval)}",
         last_run=ago(st.last_run_at if st else None, now),
         last_run_at=st.last_run_at if st else None,
         last_status=st.last_status if st else None,

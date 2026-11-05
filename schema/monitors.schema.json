@@ -549,7 +549,8 @@
                   "api_key": "#/$defs/ApiKeyAuth",
                   "basic": "#/$defs/BasicAuth",
                   "bearer": "#/$defs/BearerAuth",
-                  "oauth2_client_credentials": "#/$defs/OAuth2ClientCredentials"
+                  "oauth2_client_credentials": "#/$defs/OAuth2ClientCredentials",
+                  "token_request": "#/$defs/TokenRequestAuth"
                 },
                 "propertyName": "type"
               },
@@ -565,6 +566,9 @@
                 },
                 {
                   "$ref": "#/$defs/OAuth2ClientCredentials"
+                },
+                {
+                  "$ref": "#/$defs/TokenRequestAuth"
                 }
               ]
             },
@@ -597,7 +601,7 @@
             }
           ],
           "default": null,
-          "description": "Not supported yet: use 'interval'.",
+          "description": "Schedule for `serve` instead of 'interval', e.g. '0 8 * * mon-fri' (server.timezone).",
           "title": "Cron"
         },
         "description": {
@@ -873,7 +877,8 @@
                   "api_key": "#/$defs/ApiKeyAuth",
                   "basic": "#/$defs/BasicAuth",
                   "bearer": "#/$defs/BearerAuth",
-                  "oauth2_client_credentials": "#/$defs/OAuth2ClientCredentials"
+                  "oauth2_client_credentials": "#/$defs/OAuth2ClientCredentials",
+                  "token_request": "#/$defs/TokenRequestAuth"
                 },
                 "propertyName": "type"
               },
@@ -889,6 +894,9 @@
                 },
                 {
                   "$ref": "#/$defs/OAuth2ClientCredentials"
+                },
+                {
+                  "$ref": "#/$defs/TokenRequestAuth"
                 }
               ]
             },
@@ -1039,7 +1047,8 @@
                   "api_key": "#/$defs/ApiKeyAuth",
                   "basic": "#/$defs/BasicAuth",
                   "bearer": "#/$defs/BearerAuth",
-                  "oauth2_client_credentials": "#/$defs/OAuth2ClientCredentials"
+                  "oauth2_client_credentials": "#/$defs/OAuth2ClientCredentials",
+                  "token_request": "#/$defs/TokenRequestAuth"
                 },
                 "propertyName": "type"
               },
@@ -1055,6 +1064,9 @@
                 },
                 {
                   "$ref": "#/$defs/OAuth2ClientCredentials"
+                },
+                {
+                  "$ref": "#/$defs/TokenRequestAuth"
                 }
               ]
             },
@@ -1197,6 +1209,18 @@
           "title": "Assert",
           "type": "array"
         },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
         "drift": {
           "anyOf": [
             {
@@ -1229,6 +1253,143 @@
         "request"
       ],
       "title": "Step",
+      "type": "object"
+    },
+    "TokenRequestAuth": {
+      "additionalProperties": false,
+      "description": "Log in with any request that returns a token, once, and reuse the token until it expires.\n\nUse it on a service so all its monitors share one login.",
+      "properties": {
+        "expires_in": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "$.expires_in",
+          "description": "JSONPath to the token lifetime in seconds (missing: use 'lifetime').",
+          "title": "Expires In"
+        },
+        "header": {
+          "default": "Authorization",
+          "description": "Header that carries the token.",
+          "title": "Header",
+          "type": "string"
+        },
+        "lifetime": {
+          "anyOf": [
+            {
+              "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+              "type": "string"
+            },
+            {
+              "minimum": 0,
+              "type": "number"
+            }
+          ],
+          "default": 3600.0,
+          "description": "Token lifetime when the response doesn't say, e.g. '50m'.",
+          "title": "Lifetime"
+        },
+        "prefix": {
+          "default": "Bearer ",
+          "description": "Text before the token in that header.",
+          "title": "Prefix",
+          "type": "string"
+        },
+        "request": {
+          "$ref": "#/$defs/TokenRequestSpec"
+        },
+        "token": {
+          "default": "$.access_token",
+          "description": "JSONPath to the token in the login response.",
+          "title": "Token",
+          "type": "string"
+        },
+        "type": {
+          "const": "token_request",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "request"
+      ],
+      "title": "TokenRequestAuth",
+      "type": "object"
+    },
+    "TokenRequestSpec": {
+      "additionalProperties": false,
+      "description": "The login call that returns a token.",
+      "properties": {
+        "form": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Form"
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Headers",
+          "type": "object"
+        },
+        "json": {
+          "default": null,
+          "title": "Json"
+        },
+        "method": {
+          "default": "POST",
+          "title": "Method",
+          "type": "string"
+        },
+        "params": {
+          "additionalProperties": true,
+          "title": "Params",
+          "type": "object"
+        },
+        "timeout": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+                  "type": "string"
+                },
+                {
+                  "minimum": 0,
+                  "type": "number"
+                }
+              ],
+              "description": "Duration, e.g. '500ms', '10s', '1m', '2h' (a number means seconds)."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "TokenRequestSpec",
       "type": "object"
     }
   },

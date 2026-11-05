@@ -219,7 +219,8 @@ async def _run_step(
     result = StepResult(step.name, req.method, req.url)
     render_ctx = _render_context(m, ctx, extracted)
     try:
-        url = join_url(m.base_url, str(render_value(req.url, render_ctx)))
+        base_url = render_value(m.base_url, render_ctx) if m.base_url else None
+        url = join_url(str(base_url) if base_url else None, str(render_value(req.url, render_ctx)))
         result.url = url
         check_host(url, ctx.project.config.allowed_hosts)
         headers = {str(k): str(v) for k, v in render_value({**m.headers, **req.headers}, render_ctx).items()}

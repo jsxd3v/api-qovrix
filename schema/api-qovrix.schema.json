@@ -305,6 +305,67 @@
       "title": "Environment",
       "type": "object"
     },
+    "HeartbeatSettings": {
+      "additionalProperties": false,
+      "description": "Ping a URL while `serve` is healthy, so an outside service can alert you when the pings stop.",
+      "properties": {
+        "interval": {
+          "anyOf": [
+            {
+              "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+              "type": "string"
+            },
+            {
+              "minimum": 0,
+              "type": "number"
+            }
+          ],
+          "default": 300.0,
+          "description": "How often to ping, e.g. '5m'.",
+          "title": "Interval"
+        },
+        "method": {
+          "default": "GET",
+          "enum": [
+            "GET",
+            "POST",
+            "HEAD"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "timeout": {
+          "anyOf": [
+            {
+              "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+              "type": "string"
+            },
+            {
+              "minimum": 0,
+              "type": "number"
+            }
+          ],
+          "default": 10.0,
+          "description": "Duration, e.g. '500ms', '10s', '1m', '2h' (a number means seconds).",
+          "title": "Timeout"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Use ${env:...}: these URLs usually contain a secret token.",
+          "title": "Url"
+        }
+      },
+      "title": "HeartbeatSettings",
+      "type": "object"
+    },
     "OAuth2ClientCredentials": {
       "additionalProperties": false,
       "properties": {
@@ -423,6 +484,17 @@
           "description": "Wait this long to group changes of the same service into one alert.",
           "title": "Group Wait"
         },
+        "heartbeat": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HeartbeatSettings"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "retention": {
           "anyOf": [
             {
@@ -437,6 +509,18 @@
           "default": 2592000.0,
           "description": "How long run history is kept, e.g. '30d'.",
           "title": "Retention"
+        },
+        "timezone": {
+          "default": "UTC",
+          "description": "Time zone for cron schedules, e.g. 'Asia/Manila'.",
+          "title": "Timezone",
+          "type": "string"
+        },
+        "watch": {
+          "default": true,
+          "description": "Reload monitor files automatically when they change.",
+          "title": "Watch",
+          "type": "boolean"
         }
       },
       "title": "ServerSettings",
@@ -491,7 +575,8 @@
                   "api_key": "#/$defs/ApiKeyAuth",
                   "basic": "#/$defs/BasicAuth",
                   "bearer": "#/$defs/BearerAuth",
-                  "oauth2_client_credentials": "#/$defs/OAuth2ClientCredentials"
+                  "oauth2_client_credentials": "#/$defs/OAuth2ClientCredentials",
+                  "token_request": "#/$defs/TokenRequestAuth"
                 },
                 "propertyName": "type"
               },
@@ -507,6 +592,9 @@
                 },
                 {
                   "$ref": "#/$defs/OAuth2ClientCredentials"
+                },
+                {
+                  "$ref": "#/$defs/TokenRequestAuth"
                 }
               ]
             },
@@ -631,6 +719,143 @@
         }
       },
       "title": "ServiceConfig",
+      "type": "object"
+    },
+    "TokenRequestAuth": {
+      "additionalProperties": false,
+      "description": "Log in with any request that returns a token, once, and reuse the token until it expires.\n\nUse it on a service so all its monitors share one login.",
+      "properties": {
+        "expires_in": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": "$.expires_in",
+          "description": "JSONPath to the token lifetime in seconds (missing: use 'lifetime').",
+          "title": "Expires In"
+        },
+        "header": {
+          "default": "Authorization",
+          "description": "Header that carries the token.",
+          "title": "Header",
+          "type": "string"
+        },
+        "lifetime": {
+          "anyOf": [
+            {
+              "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+              "type": "string"
+            },
+            {
+              "minimum": 0,
+              "type": "number"
+            }
+          ],
+          "default": 3600.0,
+          "description": "Token lifetime when the response doesn't say, e.g. '50m'.",
+          "title": "Lifetime"
+        },
+        "prefix": {
+          "default": "Bearer ",
+          "description": "Text before the token in that header.",
+          "title": "Prefix",
+          "type": "string"
+        },
+        "request": {
+          "$ref": "#/$defs/TokenRequestSpec"
+        },
+        "token": {
+          "default": "$.access_token",
+          "description": "JSONPath to the token in the login response.",
+          "title": "Token",
+          "type": "string"
+        },
+        "type": {
+          "const": "token_request",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "request"
+      ],
+      "title": "TokenRequestAuth",
+      "type": "object"
+    },
+    "TokenRequestSpec": {
+      "additionalProperties": false,
+      "description": "The login call that returns a token.",
+      "properties": {
+        "form": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Form"
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Headers",
+          "type": "object"
+        },
+        "json": {
+          "default": null,
+          "title": "Json"
+        },
+        "method": {
+          "default": "POST",
+          "title": "Method",
+          "type": "string"
+        },
+        "params": {
+          "additionalProperties": true,
+          "title": "Params",
+          "type": "object"
+        },
+        "timeout": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+                  "type": "string"
+                },
+                {
+                  "minimum": 0,
+                  "type": "number"
+                }
+              ],
+              "description": "Duration, e.g. '500ms', '10s', '1m', '2h' (a number means seconds)."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "TokenRequestSpec",
       "type": "object"
     },
     "WebhookNotifier": {

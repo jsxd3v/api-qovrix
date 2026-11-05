@@ -92,7 +92,7 @@ All endpoints need `Authorization: Bearer $API_QOVRIX_API_KEY` (or a logged-in b
 
 | Method | Path | Returns |
 |---|---|---|
-| GET | `/healthz` | `{"status": "ok", "version": ...}`: for load balancers and container health checks |
+| GET | `/healthz` | `{"status": "ok", "last_check_at": ..., "monitors": ..., "version": ...}`; `503` when the scheduler isn't running. For load balancers, container health checks and outside uptime checks |
 | GET | `/api/v1/services` | Services with their monitors and status, plus counts |
 | GET | `/api/v1/monitors?service=` | Monitors with status, last result and 24 h uptime |
 | GET | `/api/v1/monitors/{name}` | One monitor and its last 20 runs |

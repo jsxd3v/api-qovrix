@@ -12,7 +12,6 @@ from api_qovrix.cli.app import app
 from api_qovrix.config.loader import load_project
 from api_qovrix.engine.results import MonitorResult, StepResult
 from api_qovrix.engine.runner import RunOptions
-from api_qovrix.errors import ConfigError
 from api_qovrix.server import scheduler as sched
 from api_qovrix.server.alerting import AlertManager, next_state
 from api_qovrix.server.scheduler import Server, prepare_data_dir
@@ -277,13 +276,13 @@ def test_run_once_flow(project, storage):
     assert any(line.startswith("✘ orders [shop] 500") for line in logs)
 
 
-def test_cron_is_rejected(make_project, storage):
-    root = make_project(
-        CONFIG,
-        {"monitors/a.yaml": "monitors:\n  - name: c\n    cron: '* * * * *'\n    request: { url: /c }\n"},
-    )
-    with pytest.raises(ConfigError, match="cron"):
-        Server(load_project(root / "api-qovrix.yaml"), storage)
+def test_invalid_cron_is_a_config_error(make_project):
+    from api_qovrix.errors import ConfigError as CE
+
+    bad = "monitors:\n  - name: c\n    cron: '61 * * * *'\n    request: { url: /c }\n"
+    root = make_project(CONFIG, {"monitors/a.yaml": bad})
+    with pytest.raises(CE, match="outside 0-59"):
+        load_project(root / "api-qovrix.yaml")
 
 
 @respx.mock

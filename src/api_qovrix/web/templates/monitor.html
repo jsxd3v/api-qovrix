@@ -7,7 +7,7 @@
   <div>
     <h1>{{ m.name }} {{ badge(m.state, m.note) }}</h1>
     {% if m.description %}<p class="muted">{{ m.description }}</p>{% endif %}
-    <p class="muted small">Every {{ m.interval }} · alert after {{ config.alert_after }} failures in a row
+    <p class="muted small">{{ m.schedule[:1]|upper }}{{ m.schedule[1:] }} · alert after {{ config.alert_after }} failures in a row
       {% if config.notify %}· notifies {{ config.notify|join(", ") }}{% else %}· no notifiers{% endif %}
       {% if m.tags %}· tags {{ m.tags|join(", ") }}{% endif %}</p>
   </div>

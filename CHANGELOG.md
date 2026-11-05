@@ -5,6 +5,27 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-05
+
+Shaped by feedback from the first production setup.
+
+### Added
+- Shared login (`token_request` auth): describe a login request once on a service; all its monitors reuse
+  the token until it expires, instead of signing in in every monitor.
+- Cron schedules for `serve` (`cron: "0 8 * * mon-fri"`, `@hourly`, ...) with `server.timezone`.
+- Monitor files reload automatically while `serve` runs (`server.watch`); only added or changed monitors
+  restart, and a broken edit keeps the previous monitors running.
+- Heartbeat pings (`server.heartbeat`) so an outside service can alert you when `serve` itself stops.
+- `/healthz` reports the scheduler's state (`503` when it isn't running) and the last check time.
+- `description` on flow steps.
+- Docs: "Monitoring the monitor", cron schedules, reloading, shared login.
+
+### Fixed
+- `{{ ... }}` now works in `base_url` (service, monitor and environment), so an address can come from a
+  secret or variable.
+- Docs said baselines contain no response values; they hold short one-way fingerprints of enum-like values.
+  The wording is now exact (README, SECURITY.md, drift docs).
+
 ## [0.2.2] - 2026-11-05
 
 ### Fixed
@@ -68,7 +89,8 @@ First release: "CI and contracts".
 - JSON Schema for `api-qovrix.yaml` and monitor files.
 - Docker image, GitHub Action, standalone binaries and an install script.
 
-[Unreleased]: https://github.com/jsxd3v/api-qovrix/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/jsxd3v/api-qovrix/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/jsxd3v/api-qovrix/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/jsxd3v/api-qovrix/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/jsxd3v/api-qovrix/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/jsxd3v/api-qovrix/compare/v0.1.0...v0.2.0

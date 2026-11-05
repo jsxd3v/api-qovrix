@@ -292,3 +292,124 @@ def test_update_baselines_skips_failed_steps(make_project):
     assert result.status == "fail"
     assert not (root / ".api-qovrix/baselines/o.json").exists()
     assert any("baseline not updated" in w for w in result.warnings)
+
+
+@respx.mock
+def test_base_url_and_step_description_support_templates(make_project, monkeypatch):
+    monkeypatch.setenv("QOVRIX_T_HOST", "api.test")
+    route = respx.get("https://api.test/v2/items").respond(200, json=[])
+    root = make_project(
+        BASE + "  HOST: ${env:QOVRIX_T_HOST}\n",
+        {
+            "monitors/a.yaml": """
+            service:
+              base_url: "https://{{ secrets.HOST }}/{{ vars.version }}"
+              vars: { version: v2 }
+            monitors:
+              - name: items
+                steps:
+                  - name: list
+                    description: List items with the shared base URL
+                    request: { url: /items }
+        """
+        },
+    )
+    result = run(root).results[0]
+    assert result.status == "pass", result.failure_summary
+    assert route.called
+
+
+TOKEN_SERVICE = """
+    service:
+      auth:
+        type: token_request
+        request:
+          url: https://auth.test/token?grant_type=password
+          headers: { apikey: "{{ secrets.KEY }}" }
+          json: { email: bot@example.com, password: "{{ secrets.TOKEN }}" }
+    monitors:
+      - name: one
+        request: { url: /a }
+      - name: two
+        request: { url: /b }
+      - name: three
+        steps:
+          - name: s
+            request: { url: /c }
+"""
+
+
+@respx.mock
+def test_token_request_login_is_shared(make_project):
+    login = respx.post("https://auth.test/token").respond(
+        200, json={"access_token": "jwt-abcdef123456", "expires_in": 3600}
+    )
+    api = respx.get(url__regex=r"https://api\.test/[abc]").respond(200, json={})
+    root = make_project(BASE, {"monitors/svc.yaml": TOKEN_SERVICE})
+    summary = run(root)
+    assert summary.ok, [r.failure_summary for r in summary.results]
+    assert login.call_count == 1  # three monitors, one sign-in
+    req = login.calls[0].request
+    assert json.loads(req.content) == {"email": "bot@example.com", "password": "tok-123456"}
+    assert req.headers["apikey"] == "key-abcdef" and req.url.params["grant_type"] == "password"
+    assert {c.request.headers["Authorization"] for c in api.calls} == {"Bearer jwt-abcdef123456"}
+
+
+@respx.mock
+def test_token_request_custom_header_short_lifetime_and_errors(make_project):
+    login = respx.post("https://auth.test/login")
+    login.side_effect = [
+        httpx.Response(200, json={"data": {"jwt": "first-token-1"}}),
+        httpx.Response(200, json={"data": {"jwt": "second-token-2"}}),
+    ]
+    api = respx.get("https://api.test/a").respond(200, json={})
+    root = make_project(
+        BASE,
+        {
+            "monitors/svc.yaml": """
+        service:
+          auth:
+            type: token_request
+            request: { url: https://auth.test/login, json: { user: u } }
+            token: $.data.jwt
+            expires_in: $.missing
+            lifetime: 1s
+            header: X-Session
+            prefix: ""
+        monitors:
+          - name: a
+            request: { url: /a }
+    """
+        },
+    )
+    project = load_project(root / "api-qovrix.yaml")
+    from api_qovrix.engine.runner import make_context, run_monitor
+
+    async def twice():
+        ctx = make_context(project, RunOptions())
+        m = project.monitor("a")
+        await run_monitor(m, ctx)
+        await asyncio.sleep(1.1)  # lifetime 1s (minus a margin): the second run logs in again
+        await run_monitor(m, ctx)
+        await ctx.clients.aclose()
+
+    asyncio.run(twice())
+    assert login.call_count == 2
+    assert [c.request.headers["X-Session"] for c in api.calls] == ["first-token-1", "second-token-2"]
+
+
+@respx.mock
+@pytest.mark.parametrize(
+    "response,message",
+    [
+        (httpx.Response(401, json={"error": "bad"}), "login request returned 401"),
+        (httpx.Response(200, text="<html>"), "login response is not JSON"),
+        (httpx.Response(200, json={"nope": 1}), "no token at $.access_token"),
+    ],
+)
+def test_token_request_errors(make_project, response, message):
+    respx.post("https://auth.test/token").mock(return_value=response)
+    root = make_project(BASE, {"monitors/svc.yaml": TOKEN_SERVICE})
+    result = run(root, ["one"]).results[0]
+    assert result.status == "error" and message in result.failure_summary
+    assert "tok-123456" not in result.failure_summary  # the login password never shows up
