@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, chart %}
+{% block title %}Overview{% endblock %}
+{% block main %}
+<section class="summary">
+  <div class="stat down"><b>{{ counts.down }}</b><span>down</span></div>
+  <div class="stat up"><b>{{ counts.up }}</b><span>up</span></div>
+  <div class="stat unknown"><b>{{ counts.unknown }}</b><span>waiting</span></div>
+  <div class="stat paused"><b>{{ counts.paused }}</b><span>paused</span></div>
+  <a class="stat incidents" href="/incidents"><b>{{ incidents|length }}</b><span>open incidents</span></a>
+</section>
+
+{% if not services %}
+<p class="empty">No monitors configured. Add files under <code>monitors/</code> and restart <code>api-qovrix serve</code>.</p>
+{% endif %}
+
+{% for svc in services %}
+<section class="service">
+  <h2>{{ badge(svc.state) }} {{ svc.name }}</h2>
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Monitor</th><th>Status</th><th>Last check</th><th class="num">Time</th><th class="num">24 h uptime</th><th>Response time</th></tr>
+    </thead>
+    <tbody>
+    {% for m in svc.monitors %}
+      <tr class="{{ m.state }}">
+        <td><a href="/monitors/{{ m.name }}">{{ m.name }}</a>{% if m.description %}<div class="muted small">{{ m.description }}</div>{% endif %}</td>
+        <td>{{ badge(m.state, m.note) }}</td>
+        <td><span title="{{ m.last_run_at or '' }}">{{ m.last_run }}</span>
+          {% if m.last_status in ("fail", "error") %}<div class="error small">{{ m.last_summary }}</div>{% endif %}</td>
+        <td class="num">{% if m.last_duration_ms is not none %}{{ '%.0f' % m.last_duration_ms }} ms{% endif %}</td>
+        <td class="num">{{ m.uptime }}</td>
+        <td>{{ chart(m.chart) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</section>
+{% endfor %}
+{% endblock %}

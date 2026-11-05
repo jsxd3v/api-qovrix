@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}Incidents{% endblock %}
+{% block main %}
+<h1>Incidents</h1>
+<p class="muted">An incident opens when a monitor is down (after its <code>alert_after</code> failures in a row) and closes when it recovers.</p>
+{% if items %}
+<div class="panel table-wrap">
+<table>
+  <thead><tr><th>State</th><th>Monitor</th><th>Service</th><th>Opened</th><th class="num">Duration</th><th>Reason</th></tr></thead>
+  <tbody>
+  {% for it in items %}
+    <tr>
+      <td>{{ badge("up" if it.incident.resolved_at else "down", "resolved" if it.incident.resolved_at else "open") }}</td>
+      <td><a href="/monitors/{{ it.incident.monitor }}">{{ it.incident.monitor }}</a></td>
+      <td>{{ it.incident.service }}</td>
+      <td title="{{ it.incident.opened_at }}">{{ it.opened }}</td>
+      <td class="num">{{ it.duration }}</td>
+      <td class="small">{{ it.incident.summary }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<p class="empty">No incidents yet.</p>
+{% endif %}
+{% endblock %}

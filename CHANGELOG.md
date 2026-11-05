@@ -15,7 +15,13 @@ and the project uses [Semantic Versioning](https://semver.org/).
   alerts when a monitor is down after `alert_after` failures in a row, optional reminders (`alert_repeat`) and
   recovery messages, grouped per service (`server.group_wait`). `--once` and JSON logs.
 - `api-qovrix services` and `api-qovrix history`.
-- Docker image: history volume at `/data`; Docker Compose example.
+- Dashboard served by `serve` (default `http://localhost:8080`): overview per service with 24 h uptime and
+  response-time charts, monitor pages with run details and drift diffs, incidents, "Run now". Server-rendered,
+  no external scripts, light/dark mode, works on phones.
+- REST API under `/api/v1` (services, monitors, runs, incidents, run now) and `/healthz`.
+- Security: password login (`API_QOVRIX_PASSWORD`) with signed HttpOnly cookies and rate limiting, API keys
+  (`API_QOVRIX_API_KEY`), strict CSP; refuses to listen beyond localhost without a password.
+- Docker image: history volume at `/data`, dashboard on port 8080; Docker Compose example with health check.
 
 ## [0.1.0] - 2026-11-04
 

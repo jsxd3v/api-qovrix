@@ -8,6 +8,7 @@ Self-hosted API monitoring for any stack that catches breaking changes, not just
 - [Drift detection](drift.md): how shapes are learned, severities, baselines in Git
 - [OpenAPI](openapi.md): response validation and generating monitors
 - [Continuous monitoring](serve.md): `serve`, history, down/recovered alerts
+- [Dashboard and REST API](dashboard.md)
 - [Alerts](alerts.md): email and webhook notifications
 - [CI, Docker and reports](ci.md)
 - [CLI reference](cli.md)

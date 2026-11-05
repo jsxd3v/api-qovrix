@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Log in · api-qovrix</title>
+  <link rel="stylesheet" href="/static/app.css?v={{ version }}">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+</head>
+<body class="login">
+  <form method="post" action="/login" class="login-box">
+    <div class="brand"><span class="logo" aria-hidden="true"></span>api-qovrix</div>
+    <p class="muted">{{ project }}{% if environment %} · {{ environment }}{% endif %}</p>
+    {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required autofocus>
+    <input type="hidden" name="next" value="{{ next }}">
+    <button type="submit">Log in</button>
+  </form>
+</body>
+</html>

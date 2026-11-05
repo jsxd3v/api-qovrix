@@ -35,6 +35,8 @@ dependencies = [
     "jsonpath-ng>=1.6",
     "typer>=0.12",
     "rich>=13.7",
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
 ]
 
 [project.optional-dependencies]
@@ -68,6 +70,7 @@ testpaths = ["tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 addopts = "-q"
+filterwarnings = ["ignore:Using `httpx` with `starlette.testclient`"]
 
 [tool.coverage.run]
 source = ["api_qovrix"]

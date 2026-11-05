@@ -169,6 +169,19 @@ class Storage:
 
         return await self._arun(q)
 
+    async def uptime(self, since: str) -> dict[str, tuple[int, int]]:
+        """Per monitor: (passed runs, counted runs) since a time. Skipped runs are not counted."""
+
+        def q(c: sqlite3.Connection) -> dict[str, tuple[int, int]]:
+            rows = c.execute(
+                "SELECT monitor, SUM(status = 'pass') AS ok, COUNT(*) AS total FROM runs "
+                "WHERE started_at >= ? AND status != 'skipped' GROUP BY monitor",
+                (since,),
+            ).fetchall()
+            return {r["monitor"]: (int(r["ok"] or 0), int(r["total"])) for r in rows}
+
+        return await self._arun(q)
+
     async def prune(self, older_than: str) -> int:
         def q(c: sqlite3.Connection) -> int:
             runs = c.execute("DELETE FROM runs WHERE started_at < ?", (older_than,)).rowcount

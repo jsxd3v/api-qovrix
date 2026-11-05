@@ -61,7 +61,7 @@ Drift detection in `serve` compares responses with the baselines committed in `.
 
 | Where | How |
 |---|---|
-| Docker / Docker Compose | See [`examples/docker-compose`](../examples/docker-compose/docker-compose.yml): one container, your `monitoring/` folder mounted read-only, and a volume for `/data` |
+| Docker / Docker Compose | See [`examples/docker-compose`](../examples/docker-compose/docker-compose.yml): one container, your `monitoring/` folder mounted read-only, a volume for `/data`, and `API_QOVRIX_PASSWORD` for the dashboard |
 | A VPS or VM | Install the binary and run `api-qovrix serve` as a system service (e.g. systemd), from the folder with `api-qovrix.yaml` |
 | Kubernetes | One replica, a ConfigMap or volume with the monitor files, and a persistent volume for `/data` |
 
@@ -75,5 +75,7 @@ Run **one** `serve` process per project (it owns its SQLite file). Logs go to st
 
 Use `--log-format json` for log collectors.
 
-To pick up changes to monitor files, restart the process. The dashboard and REST API arrive in the next
-release.
+To pick up changes to monitor files, restart the process.
+
+The same process serves the dashboard and REST API at `http://localhost:8080`: see
+[dashboard.md](dashboard.md).

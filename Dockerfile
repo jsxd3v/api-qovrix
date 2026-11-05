@@ -16,9 +16,12 @@ COPY LICENSE NOTICE THIRD_PARTY_NOTICES.md /usr/share/doc/api-qovrix/
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    API_QOVRIX_DATA=/data
+    API_QOVRIX_DATA=/data \
+    API_QOVRIX_HOST=0.0.0.0 \
+    API_QOVRIX_PORT=8080
 RUN useradd --create-home --uid 10001 qovrix && mkdir /work /data && chown qovrix /work /data
 VOLUME ["/data"]
+EXPOSE 8080
 USER qovrix
 WORKDIR /work
 ENTRYPOINT ["api-qovrix"]

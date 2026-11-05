@@ -282,11 +282,22 @@ def serve(
     env: EnvOpt = None,
     env_file: EnvFileOpt = None,
     data_dir: DataDirOpt = None,
+    host: Annotated[
+        str, typer.Option(envvar="API_QOVRIX_HOST", help="Dashboard address (0.0.0.0 = all interfaces).")
+    ] = "127.0.0.1",
+    port: Annotated[
+        int, typer.Option(envvar="API_QOVRIX_PORT", min=0, max=65535, help="Dashboard port.")
+    ] = 8080,
+    no_web: Annotated[bool, typer.Option("--no-web", help="Run without the dashboard and REST API.")] = False,
     once: Annotated[bool, typer.Option("--once", help="Check every monitor once, alert, and exit.")] = False,
     log_format: Annotated[str, typer.Option(help="Log lines as 'text' or 'json'.")] = "text",
 ) -> None:
-    """Run monitors continuously on their intervals, keep history and send alerts."""
+    """Run monitors continuously, keep history, send alerts and serve the dashboard.
+
+    The dashboard password comes from API_QOVRIX_PASSWORD and the REST API key from API_QOVRIX_API_KEY.
+    """
     import contextlib
+    import os
     import signal
 
     from api_qovrix.server.scheduler import Server, make_logger
@@ -294,8 +305,24 @@ def serve(
     if log_format not in ("text", "json"):
         raise _fail("--log-format must be 'text' or 'json'")
     project = _load(config, env, env_file)
-    storage = _storage(project, data_dir)
     log = make_logger(log_format)
+
+    web_auth = None
+    if not (no_web or once):
+        from api_qovrix.web.auth import Auth
+        from api_qovrix.web.server import WebError, check_exposure
+
+        web_auth = Auth(
+            password=os.environ.get("API_QOVRIX_PASSWORD") or None,
+            api_key=os.environ.get("API_QOVRIX_API_KEY") or None,
+        )
+        try:
+            for warning in check_exposure(host, web_auth):
+                log(f"! {warning}")
+        except WebError as exc:
+            raise _fail(str(exc)) from None
+
+    storage = _storage(project, data_dir)
 
     async def main() -> None:
         try:
@@ -311,7 +338,15 @@ def serve(
             # Windows has no signal handlers in asyncio: Ctrl+C raises KeyboardInterrupt instead.
             with contextlib.suppress(NotImplementedError, RuntimeError):
                 loop.add_signal_handler(sig, server.stop)
-        await server.serve()
+        if web_auth is None:
+            await server.serve()
+            return
+        from api_qovrix.web.server import serve_with_web
+
+        try:
+            await serve_with_web(server, web_auth, host, port, log)
+        except QovrixError as exc:
+            raise _fail(str(exc)) from None
 
     try:
         asyncio.run(main())
@@ -701,6 +736,58 @@ def _utf8_output() -> None:
         encoding = (getattr(stream, "encoding", None) or "").lower().replace("-", "")
         if encoding != "utf8" and hasattr(stream, "reconfigure"):
             stream.reconfigure(encoding="utf-8", errors="replace")
+
+
+@app.command(hidden=True)
+def selftest() -> None:
+    """Check that the package and its bundled files work (used to smoke-test release binaries)."""
+    import tempfile
+
+    import httpx
+
+    from api_qovrix.scaffold import init_project
+    from api_qovrix.server.scheduler import Server, prepare_data_dir
+    from api_qovrix.server.storage import Storage
+    from api_qovrix.web.app import create_app
+    from api_qovrix.web.auth import Auth
+    from api_qovrix.web.server import _Uvicorn  # noqa: F401  (imports uvicorn's server modules)
+
+    async def check(project: Project, storage: Storage) -> list[str]:
+        server = Server(project, storage, log=lambda s: None)
+        app = create_app(server, Auth(password=None, api_key=None))
+        transport = httpx.ASGITransport(app=app)
+        failures = []
+        async with httpx.AsyncClient(transport=transport, base_url="http://selftest") as http:
+            for path in (
+                "/",
+                "/incidents",
+                "/static/app.css",
+                "/static/app.js",
+                "/healthz",
+                "/api/v1/services",
+            ):
+                r = await http.get(path)
+                if r.status_code != 200:
+                    failures.append(f"{path}: HTTP {r.status_code}")
+            first = project.monitors[0].name
+            r = await http.get(f"/monitors/{first}")
+            if r.status_code != 200:
+                failures.append(f"/monitors/{first}: HTTP {r.status_code}")
+        await server.ctx.clients.aclose()
+        return failures
+
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        init_project(root)
+        project = load_project(root / "api-qovrix.yaml")
+        storage = Storage(prepare_data_dir(root / "data"))
+        try:
+            failures = asyncio.run(check(project, storage))
+        finally:
+            storage.close()
+    if failures:
+        raise _fail("selftest failed: " + "; ".join(failures), 1)
+    console.print(f"[green]✔[/green] api-qovrix {__version__} selftest passed")
 
 
 def main() -> None:

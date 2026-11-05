@@ -18,6 +18,7 @@ nav:
   - Drift detection: drift.md
   - OpenAPI: openapi.md
   - Continuous monitoring: serve.md
+  - Dashboard and REST API: dashboard.md
   - Alerts: alerts.md
   - CI, Docker and reports: ci.md
   - CLI reference: cli.md

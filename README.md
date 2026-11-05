@@ -92,7 +92,7 @@ Editors autocomplete these files from the published [JSON Schema](schema/).
 
 ## Features
 
-**Available now (v0.1)**
+**Available now**
 
 - **Contract drift detection.** api-qovrix learns the shape of each response and reports removed fields,
   type changes, new `null`s, unseen enum values and arrays that are suddenly empty, with a readable diff.
@@ -111,6 +111,8 @@ Editors autocomplete these files from the published [JSON Schema](schema/).
   status page.
 - **Continuous monitoring:** `api-qovrix serve` runs each monitor on its interval, keeps history in SQLite,
   and alerts when a monitor goes down (after N failures in a row) or recovers, grouped per service.
+- **Dashboard and REST API:** status of every service and monitor, response-time charts, run details with
+  drift diffs, incidents and a "Run now" button, plus a REST API. Password-protected, no external scripts.
 - **Alerts by email or webhook:** `api-qovrix run --notify` sends one message per notifier listing what
   failed and why, including drift diffs. Works from scheduled CI, no server needed.
 - **CI-ready:** exit codes, JUnit XML, JSON reports, a GitHub Action, Docker image and standalone binaries.
@@ -118,10 +120,8 @@ Editors autocomplete these files from the published [JSON Schema](schema/).
 
 **Coming soon**
 
-- **v0.2 · Dashboard:** a web page with the status of every service and monitor, history and drift diffs,
-  plus a REST API, both password-protected.
-- **v0.3 · Insight:** learned latency baselines, `Deprecation` / `Sunset` / rate-limit / TLS-expiry warnings,
-  status page, metrics export, more storage and install options, Python plugins.
+- **Next:** `--html` report for CI, then learned latency baselines, `Deprecation` / `Sunset` / rate-limit /
+  TLS-expiry warnings, a public status page and metrics export.
 
 ## In CI
 
@@ -153,6 +153,7 @@ Any other CI works too: run the binary or `docker run --rm -v "$PWD:/work" ghcr.
 - [Drift detection and baselines](docs/drift.md)
 - [OpenAPI](docs/openapi.md)
 - [Continuous monitoring (`serve`)](docs/serve.md)
+- [Dashboard and REST API](docs/dashboard.md)
 - [Alerts: email and webhook](docs/alerts.md)
 - [CI, Docker and reports](docs/ci.md)
 - [CLI reference](docs/cli.md)

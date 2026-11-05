@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block title %}{{ project }}{% endblock %} · api-qovrix</title>
+  <link rel="stylesheet" href="/static/app.css?v={{ version }}">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <script src="/static/app.js?v={{ version }}" defer></script>
+</head>
+<body{% if refresh %} data-refresh="15"{% endif %}>
+  <header class="top">
+    <a class="brand" href="/"><span class="logo" aria-hidden="true"></span>api-qovrix</a>
+    <nav>
+      <a href="/" {% if path == "/" %}aria-current="page"{% endif %}>Overview</a>
+      <a href="/incidents" {% if path == "/incidents" %}aria-current="page"{% endif %}>Incidents</a>
+    </nav>
+    <div class="meta">
+      <span class="project">{{ project }}{% if environment %} · {{ environment }}{% endif %}</span>
+      {% if login_required %}
+      <form method="post" action="/logout"><button class="link" type="submit">Log out</button></form>
+      {% endif %}
+    </div>
+  </header>
+  <main id="main">
+    {% block main %}{% endblock %}
+  </main>
+  <footer>api-qovrix {{ version }}{% if refresh %} · <span id="refresh-note">updates every 15 s</span>{% endif %}</footer>
+</body>
+</html>

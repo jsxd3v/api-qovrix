@@ -133,6 +133,10 @@ class Server:
     def stop(self) -> None:
         self._stop.set()
 
+    @property
+    def stopping(self) -> bool:
+        return self._stop.is_set()
+
     async def serve(self) -> None:
         """Run until stop() is called; then send pending alerts and close everything."""
         await self.storage.forget_monitors({m.name for m in self.project.monitors})

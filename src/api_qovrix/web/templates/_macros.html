@@ -1,0 +1,13 @@
+{% macro badge(state, note=None) -%}
+<span class="badge {{ state }}">{{ note or state }}</span>
+{%- endmacro %}
+
+{% macro chart(c, cls="spark") -%}
+{% if c %}
+<svg class="{{ cls }}" viewBox="0 0 {{ c.width }} {{ c.height }}" preserveAspectRatio="none" role="img"
+     aria-label="Response time, last {{ c.count }} runs, max {{ '%.0f' % c.max_ms }} ms">
+  <polyline points="{{ c.points }}" />
+  {% for x, y in c.failures %}<path class="fail" d="M{{ '%.1f' % x }} {{ '%.1f' % y }}h0" />{% endfor %}
+</svg>
+{% else %}<span class="muted">no data</span>{% endif %}
+{%- endmacro %}

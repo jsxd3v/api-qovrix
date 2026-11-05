@@ -70,6 +70,7 @@ jobs:
         run: |
           docker run --rm api-qovrix:ci --version
           docker run --rm api-qovrix:ci --help
+          docker run --rm api-qovrix:ci selftest
 
   action:
     runs-on: ubuntu-latest
