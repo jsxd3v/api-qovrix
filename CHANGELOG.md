@@ -5,6 +5,8 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-05
+
 ### Fixed
 - Dashboard on Windows: stylesheet and script are always served with the right content type, even when the
   Windows registry maps `.js`/`.css` to `text/plain` (browsers refused them, so pages showed unstyled).
@@ -52,6 +54,7 @@ First release: "CI and contracts".
 - JSON Schema for `api-qovrix.yaml` and monitor files.
 - Docker image, GitHub Action, standalone binaries and an install script.
 
-[Unreleased]: https://github.com/jsxd3v/api-qovrix/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/jsxd3v/api-qovrix/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/jsxd3v/api-qovrix/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/jsxd3v/api-qovrix/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jsxd3v/api-qovrix/releases/tag/v0.1.0
