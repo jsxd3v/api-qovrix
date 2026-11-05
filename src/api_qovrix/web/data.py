@@ -63,6 +63,44 @@ class Chart:
 
 
 @dataclass
+class Segment:
+    """One block of an uptime bar (an hour or a day)."""
+
+    level: str  # up | minor | down | none
+    label: str
+
+
+def segment(label: str, ok: int, total: int) -> Segment:
+    if not total:
+        return Segment("none", f"{label}: no checks")
+    pct = 100.0 * ok / total
+    level = "up" if ok == total else ("minor" if pct >= 95 else "down")
+    failed = total - ok
+    detail = "all checks passed" if not failed else f"{failed} of {total} checks failed"
+    return Segment(level, f"{label}: {detail}")
+
+
+def hour_segments(hours: dict[str, tuple[int, int]], now: datetime, count: int = 24) -> list[Segment]:
+    out = []
+    for i in range(count - 1, -1, -1):
+        t = now - timedelta(hours=i)
+        key = t.strftime("%Y-%m-%dT%H")
+        ok, total = hours.get(key, (0, 0))
+        out.append(segment(t.strftime("%H:00 UTC"), ok, total))
+    return out
+
+
+def day_segments(rows: list[dict[str, Any]], now: datetime, count: int = 30) -> list[Segment]:
+    by_day = {r["day"]: (int(r["ok"]), int(r["total"])) for r in rows}
+    out = []
+    for i in range(count - 1, -1, -1):
+        day = (now - timedelta(days=i)).date().isoformat()
+        ok, total = by_day.get(day, (0, 0))
+        out.append(segment(day, ok, total))
+    return out
+
+
+@dataclass
 class MonitorView:
     name: str
     service: str
@@ -78,12 +116,20 @@ class MonitorView:
     last_duration_ms: float | None
     uptime: str
     tags: list[str]
+    failing: int = 0
+    alert_after: int = 2
     chart: Chart | None = None
+    bars: list[Segment] = field(default_factory=list)
+
+    @property
+    def display(self) -> str:
+        """Badge style: 'failing' (failed, not down yet) is shown apart from 'down'."""
+        return "failing" if self.state != "down" and self.failing else self.state
 
     def api(self) -> dict[str, Any]:
         data = asdict(self)
-        data.pop("chart")
-        data.pop("last_run")
+        for key in ("chart", "last_run", "bars"):
+            data.pop(key)
         return data
 
 
@@ -92,6 +138,23 @@ class ServiceView:
     name: str
     state: str
     monitors: list[MonitorView] = field(default_factory=list)
+
+    @property
+    def display(self) -> str:
+        if self.state != "down" and any(m.display == "failing" for m in self.monitors):
+            return "failing"
+        return self.state
+
+    @property
+    def summary(self) -> str:
+        down = sum(m.state == "down" for m in self.monitors)
+        failing = sum(m.display == "failing" for m in self.monitors)
+        parts = [f"{len(self.monitors)} monitor{'s' if len(self.monitors) != 1 else ''}"]
+        if down:
+            parts.append(f"{down} down")
+        if failing:
+            parts.append(f"{failing} failing")
+        return " · ".join(parts)
 
     def api(self) -> dict[str, Any]:
         return {"name": self.name, "state": self.state, "monitors": [m.api() for m in self.monitors]}
@@ -144,6 +207,8 @@ async def monitor_view(
         last_duration_ms=st.last_duration_ms if st else None,
         uptime=_uptime(uptime.get(m.name)),
         tags=m.tags,
+        failing=st.consecutive_failures if st and st.state != "down" else 0,
+        alert_after=m.alert_after,
         chart=Chart.build(runs, *chart_size) if runs else None,
     )
 
@@ -153,10 +218,13 @@ async def overview(
 ) -> list[ServiceView]:
     states = {s.monitor: s for s in await storage.all_states()}
     uptime = await storage.uptime((now - timedelta(hours=24)).isoformat())
+    hourly = await storage.hourly((now - timedelta(hours=23)).strftime("%Y-%m-%dT%H")) if charts else {}
     services: dict[str, ServiceView] = {}
     for m in sorted(project.monitors, key=lambda x: (x.service, x.name)):
         runs = await storage.history(m.name, SPARK_RUNS) if charts else None
         view = await monitor_view(m, states.get(m.name), uptime, now, runs)
+        if charts:
+            view.bars = hour_segments(hourly.get(m.name, {}), now)
         services.setdefault(m.service, ServiceView(m.service, "unknown")).monitors.append(view)
     for svc in services.values():
         svc.state = worst([mv.state for mv in svc.monitors])
@@ -164,8 +232,42 @@ async def overview(
 
 
 def counts(services: list[ServiceView]) -> dict[str, int]:
-    out = {"up": 0, "down": 0, "unknown": 0, "paused": 0}
+    out = {"up": 0, "down": 0, "unknown": 0, "paused": 0, "failing": 0, "healthy": 0, "waiting": 0}
     for svc in services:
         for m in svc.monitors:
             out[m.state] = out.get(m.state, 0) + 1
+            if m.display == "failing":
+                out["failing"] += 1  # failing monitors count once, here, whatever their earlier state
+            elif m.state == "up":
+                out["healthy"] += 1
+            elif m.state in ("unknown", "paused"):
+                out["waiting"] += 1
     return out
+
+
+@dataclass
+class Banner:
+    level: str  # up | failing | down | unknown
+    title: str
+    detail: str
+
+
+def banner(services: list[ServiceView]) -> Banner:
+    monitors = [m for s in services for m in s.monitors]
+    down = [m.name for m in monitors if m.state == "down"]
+    failing = [m.name for m in monitors if m.display == "failing"]
+    checked = [m for m in monitors if m.state in ("up", "down")]
+
+    def names(items: list[str]) -> str:
+        return ", ".join(items[:5]) + (f" and {len(items) - 5} more" if len(items) > 5 else "")
+
+    if down:
+        noun = "monitor is" if len(down) == 1 else "monitors are"
+        detail = names(down) + (f" · also failing: {names(failing)}" if failing else "")
+        return Banner("down", f"{len(down)} {noun} down", detail)
+    if failing:
+        noun = "monitor is" if len(failing) == 1 else "monitors are"
+        return Banner("failing", f"{len(failing)} {noun} failing", f"{names(failing)} (not down yet)")
+    if not checked:
+        return Banner("unknown", "Waiting for the first checks", f"{len(monitors)} monitors scheduled")
+    return Banner("up", "All monitors are up", f"{len(checked)} monitors checked")

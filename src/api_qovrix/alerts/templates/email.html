@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>{{ a.subject }}</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#141a26;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:24px 12px;">
+<tr><td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border:1px solid #e3e7ee;border-radius:12px;overflow:hidden;">
+  <tr><td style="background:{{ color }};padding:20px 24px;color:#ffffff;">
+    <div style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;opacity:.9;">{{ label }}{% if a.brand %} · {{ a.brand }}{% endif %}</div>
+    <div style="font-size:20px;font-weight:700;line-height:1.3;margin-top:4px;">{{ headline }}</div>
+    {% if a.where %}<div style="font-size:14px;opacity:.9;margin-top:2px;">{{ a.where }}</div>{% endif %}
+  </td></tr>
+
+  {% if a.event == "test" %}
+  <tr><td style="padding:24px;font-size:15px;line-height:1.6;">Notifications are working. You'll get messages like this when a monitor goes down or recovers.</td></tr>
+  {% endif %}
+
+  {% if a.failed %}
+  <tr><td style="padding:20px 24px 8px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:14px;">
+      <tr>
+        <td style="padding:8px 0;border-bottom:1px solid #e3e7ee;color:#5f6b7d;font-size:12px;text-transform:uppercase;letter-spacing:.05em;">Monitor</td>
+        <td style="padding:8px 0;border-bottom:1px solid #e3e7ee;color:#5f6b7d;font-size:12px;text-transform:uppercase;letter-spacing:.05em;">Why</td>
+      </tr>
+      {% for m in a.failed %}
+      <tr>
+        <td valign="top" style="padding:12px 12px 12px 0;border-bottom:1px solid #e3e7ee;width:38%;">
+          {% set url = a.monitor_url(m.name) %}
+          {% if url %}<a href="{{ url }}" style="color:#141a26;font-weight:600;text-decoration:none;">{{ m.name }}</a>{% else %}<b>{{ m.name }}</b>{% endif %}
+          <div style="color:#5f6b7d;font-size:13px;margin-top:2px;">{{ m.service }}</div>
+          <div style="margin-top:6px;"><span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;background:{{ '#fdecec' if m.status == 'error' or a.kind != 'reminder' else '#fff3e0' }};color:{{ color }};">{{ m.status }}</span></div>
+          {% if m.since %}<div style="color:#5f6b7d;font-size:12px;margin-top:6px;">since {{ short_time(m.since) }}</div>{% endif %}
+        </td>
+        <td valign="top" style="padding:12px 0;border-bottom:1px solid #e3e7ee;">
+          <div style="font-family:Menlo,Consolas,monospace;font-size:13px;line-height:1.5;word-break:break-word;">{{ m.summary }}</div>
+          {% if m.drift %}
+          <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:8px;border-collapse:collapse;width:100%;">
+            {% for c in m.drift %}
+            <tr><td style="padding:3px 8px;background:{{ '#fdecec' if c.severity == 'breaking' else '#fff3e0' }};font-family:Menlo,Consolas,monospace;font-size:12px;">{{ c.path }}</td>
+                <td style="padding:3px 8px;background:{{ '#fdecec' if c.severity == 'breaking' else '#fff3e0' }};font-size:12px;">{{ c.message }}</td></tr>
+            {% endfor %}
+          </table>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </td></tr>
+  {% endif %}
+
+  {% if a.recovered %}
+  <tr><td style="padding:{{ '8px' if a.failed else '20px' }} 24px 8px;">
+    {% if a.failed %}<div style="font-weight:700;color:#0f8a5f;margin:8px 0;">Recovered</div>{% endif %}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:14px;">
+      {% for r in a.recovered %}
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #e3e7ee;">
+          {% set url = a.monitor_url(r.name) %}
+          <span style="color:#0f8a5f;font-weight:700;">✓</span>
+          {% if url %}<a href="{{ url }}" style="color:#141a26;font-weight:600;text-decoration:none;">{{ r.name }}</a>{% else %}<b>{{ r.name }}</b>{% endif %}
+        </td>
+        <td align="right" style="padding:10px 0;border-bottom:1px solid #e3e7ee;color:#5f6b7d;font-size:13px;">was down {{ r.down_for }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </td></tr>
+  {% endif %}
+
+  {% if a.link %}
+  <tr><td style="padding:16px 24px 24px;">
+    <a href="{{ a.link }}" style="display:inline-block;background:{{ a.accent }};color:#ffffff;text-decoration:none;font-weight:600;padding:11px 18px;border-radius:8px;font-size:14px;">{{ 'Open dashboard' if a.dashboard_url else 'Open the CI run' }}</a>
+  </td></tr>
+  {% endif %}
+
+  <tr><td style="padding:14px 24px;border-top:1px solid #e3e7ee;color:#8a94a6;font-size:12px;">
+    Sent by api-qovrix · {{ short_time(a.timestamp) }}{% if a.run_url and a.dashboard_url %} · <a href="{{ a.run_url }}" style="color:#8a94a6;">CI run</a>{% endif %}
+  </td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>

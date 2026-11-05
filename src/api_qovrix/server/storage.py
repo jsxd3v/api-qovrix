@@ -13,14 +13,15 @@ import sqlite3
 import threading
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, fields
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Literal, TypeVar
 
 from api_qovrix.engine.results import MonitorResult
 from api_qovrix.report.output import monitor_to_dict
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
+DAILY_KEEP_DAYS = 400  # daily summaries outlive raw runs, for the 90-day status page
 RESOLVE_SQL = "UPDATE incidents SET resolved_at = ? WHERE monitor = ? AND resolved_at IS NULL"
 T = TypeVar("T")
 State = Literal["unknown", "up", "down", "paused"]
@@ -64,6 +65,16 @@ CREATE TABLE IF NOT EXISTS incidents (
     summary     TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS incidents_open ON incidents (monitor, resolved_at);
+
+CREATE TABLE IF NOT EXISTS daily (
+    monitor TEXT NOT NULL,
+    service TEXT NOT NULL,
+    day     TEXT NOT NULL,
+    ok      INTEGER NOT NULL,
+    total   INTEGER NOT NULL,
+    PRIMARY KEY (monitor, day)
+);
+CREATE INDEX IF NOT EXISTS daily_service ON daily (service, day);
 """
 
 
@@ -113,6 +124,16 @@ class Storage:
                 raise RuntimeError(
                     f"{path} was created by a newer api-qovrix (schema {row['value']}); upgrade api-qovrix"
                 )
+            elif int(row["value"]) < 2:
+                # v1 -> v2: build the daily summaries from the run history that exists
+                self._conn.execute(
+                    "INSERT OR REPLACE INTO daily (monitor, service, day, ok, total) "
+                    "SELECT monitor, service, substr(started_at, 1, 10), SUM(status = 'pass'), COUNT(*) "
+                    "FROM runs WHERE status != 'skipped' GROUP BY monitor, substr(started_at, 1, 10)"
+                )
+                self._conn.execute(
+                    "UPDATE meta SET value = ? WHERE key = 'schema_version'", (str(SCHEMA_VERSION),)
+                )
 
     # ------------------------------------------------------------------ sync core
 
@@ -147,6 +168,13 @@ class Storage:
                     details,
                 ),
             )
+            if result.status != "skipped":
+                c.execute(
+                    "INSERT INTO daily (monitor, service, day, ok, total) VALUES (?, ?, ?, ?, 1) "
+                    "ON CONFLICT (monitor, day) DO UPDATE SET ok = ok + excluded.ok, total = total + 1, "
+                    "service = excluded.service",
+                    (result.name, result.service, started_at[:10], 1 if result.status == "pass" else 0),
+                )
             return int(cur.lastrowid or 0)
 
         return await self._arun(q)
@@ -182,9 +210,42 @@ class Storage:
 
         return await self._arun(q)
 
+    async def daily(self, since_day: str, monitors: list[str] | None = None) -> list[dict[str, Any]]:
+        """Per monitor and UTC day: passed and counted checks (skipped runs are not counted)."""
+
+        def q(c: sqlite3.Connection) -> list[dict[str, Any]]:
+            rows = c.execute(
+                "SELECT monitor, service, day, ok, total FROM daily WHERE day >= ? ORDER BY day", (since_day,)
+            ).fetchall()
+            out = [dict(r) for r in rows]
+            return [r for r in out if monitors is None or r["monitor"] in monitors]
+
+        return await self._arun(q)
+
+    async def hourly(self, since: str) -> dict[str, dict[str, tuple[int, int]]]:
+        """Per monitor and UTC hour ('YYYY-MM-DDTHH'): (passed, counted) since a time."""
+
+        def q(c: sqlite3.Connection) -> dict[str, dict[str, tuple[int, int]]]:
+            rows = c.execute(
+                "SELECT monitor, substr(started_at, 1, 13) AS hour, SUM(status = 'pass') AS ok, "
+                "COUNT(*) AS total FROM runs WHERE started_at >= ? AND status != 'skipped' "
+                "GROUP BY monitor, hour",
+                (since,),
+            ).fetchall()
+            out: dict[str, dict[str, tuple[int, int]]] = {}
+            for r in rows:
+                out.setdefault(r["monitor"], {})[r["hour"]] = (int(r["ok"] or 0), int(r["total"]))
+            return out
+
+        return await self._arun(q)
+
     async def prune(self, older_than: str) -> int:
         def q(c: sqlite3.Connection) -> int:
             runs = c.execute("DELETE FROM runs WHERE started_at < ?", (older_than,)).rowcount
+            keep_from = (
+                (datetime.fromisoformat(older_than) - timedelta(days=DAILY_KEEP_DAYS)).date().isoformat()
+            )
+            c.execute("DELETE FROM daily WHERE day < ?", (keep_from,))
             c.execute(
                 "DELETE FROM incidents WHERE resolved_at IS NOT NULL AND resolved_at < ?", (older_than,)
             )

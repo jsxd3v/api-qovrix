@@ -80,6 +80,48 @@
       "title": "BearerAuth",
       "type": "object"
     },
+    "Branding": {
+      "additionalProperties": false,
+      "description": "Name, logo and color for the dashboard, the status page and alert emails.",
+      "properties": {
+        "accent": {
+          "default": "#5b4fd6",
+          "description": "Accent color, e.g. '#0e7490'.",
+          "pattern": "^#[0-9a-fA-F]{6}$",
+          "title": "Accent",
+          "type": "string"
+        },
+        "logo": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Path to a .svg, .png, .jpg or .webp file (relative to api-qovrix.yaml).",
+          "title": "Logo"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Shown instead of the project name.",
+          "title": "Name"
+        }
+      },
+      "title": "Branding",
+      "type": "object"
+    },
     "Defaults": {
       "additionalProperties": false,
       "properties": {
@@ -495,6 +537,19 @@
           ],
           "default": null
         },
+        "public_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Public address of the dashboard (e.g. https://monitor.example.com) for links in alerts.",
+          "title": "Public Url"
+        },
         "retention": {
           "anyOf": [
             {
@@ -721,6 +776,185 @@
       "title": "ServiceConfig",
       "type": "object"
     },
+    "StatusNotice": {
+      "additionalProperties": false,
+      "description": "A message from the operator on the status page.",
+      "properties": {
+        "message": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Message"
+        },
+        "resolved": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "When it ended (ISO 8601). Empty = still ongoing.",
+          "title": "Resolved"
+        },
+        "services": {
+          "description": "Affected services (empty = all).",
+          "items": {
+            "type": "string"
+          },
+          "title": "Services",
+          "type": "array"
+        },
+        "started": {
+          "description": "When it started, ISO 8601, e.g. '2026-11-05T10:00:00Z'.",
+          "title": "Started",
+          "type": "string"
+        },
+        "status": {
+          "default": "investigating",
+          "enum": [
+            "investigating",
+            "identified",
+            "monitoring",
+            "resolved",
+            "maintenance"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 160,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "started"
+      ],
+      "title": "StatusNotice",
+      "type": "object"
+    },
+    "StatusPage": {
+      "additionalProperties": false,
+      "description": "A public, read-only status page at /status (no login, no internal details).",
+      "properties": {
+        "days": {
+          "default": 90,
+          "description": "Days of uptime history to show.",
+          "maximum": 365,
+          "minimum": 7,
+          "title": "Days",
+          "type": "integer"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "notices": {
+          "items": {
+            "$ref": "#/$defs/StatusNotice"
+          },
+          "title": "Notices",
+          "type": "array"
+        },
+        "services": {
+          "description": "Services to show, in this order. Others stay private.",
+          "items": {
+            "$ref": "#/$defs/StatusService"
+          },
+          "title": "Services",
+          "type": "array"
+        },
+        "show_incidents": {
+          "default": true,
+          "description": "List detected outages (times only, no error details).",
+          "title": "Show Incidents",
+          "type": "boolean"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Default: '<name> status'.",
+          "title": "Title"
+        }
+      },
+      "title": "StatusPage",
+      "type": "object"
+    },
+    "StatusService": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 80,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Public name (default: the service name).",
+          "title": "Name"
+        },
+        "service": {
+          "description": "Service name in your monitor files.",
+          "title": "Service",
+          "type": "string"
+        }
+      },
+      "required": [
+        "service"
+      ],
+      "title": "StatusService",
+      "type": "object"
+    },
     "TokenRequestAuth": {
       "additionalProperties": false,
       "description": "Log in with any request that returns a token, once, and reuse the token until it expires.\n\nUse it on a service so all its monitors share one login.",
@@ -867,6 +1101,17 @@
           "description": "Optional custom JSON body. Strings may use {{ alert.text }}, {{ alert.failed_count }}, ... Default: a JSON object with a 'text' field and the full details.",
           "title": "Body"
         },
+        "format": {
+          "default": "json",
+          "description": "json: full details with a 'text' field. embed: a colored card ('embeds'). blocks: header, fields and a button ('blocks'). Ignored when 'body' is set.",
+          "enum": [
+            "json",
+            "embed",
+            "blocks"
+          ],
+          "title": "Format",
+          "type": "string"
+        },
         "headers": {
           "additionalProperties": {
             "type": "string"
@@ -934,6 +1179,9 @@
       "default": null,
       "description": "Optional allowlist of hosts monitors may call (e.g. 'api.example.com', '*.internal').",
       "title": "Allowed Hosts"
+    },
+    "branding": {
+      "$ref": "#/$defs/Branding"
     },
     "default_environment": {
       "anyOf": [
@@ -1033,6 +1281,9 @@
       },
       "title": "Services",
       "type": "object"
+    },
+    "status_page": {
+      "$ref": "#/$defs/StatusPage"
     },
     "version": {
       "const": 1,

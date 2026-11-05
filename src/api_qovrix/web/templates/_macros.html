@@ -9,5 +9,18 @@
   <polyline points="{{ c.points }}" />
   {% for x, y in c.failures %}<path class="fail" d="M{{ '%.1f' % x }} {{ '%.1f' % y }}h0" />{% endfor %}
 </svg>
-{% else %}<span class="muted">no data</span>{% endif %}
+{% else %}<span class="faint small">no data</span>{% endif %}
+{%- endmacro %}
+
+{% macro bars(segments, cls="") -%}
+<div class="bars {{ cls }}" role="img" aria-label="{{ segments|selectattr('level', 'equalto', 'down')|list|length }} bad and {{ segments|selectattr('level', 'equalto', 'minor')|list|length }} partly bad periods">
+  {% for s in segments %}<span class="seg {{ s.level }}" title="{{ s.label }}"></span>{% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro banner_box(level, title, detail, cls="") -%}
+<div class="banner {{ level }} {{ cls }}" role="status">
+  <span class="icon" aria-hidden="true">{{ {'up': '✓', 'operational': '✓', 'down': '!', 'major_outage': '!', 'failing': '!', 'partial_outage': '!', 'maintenance': 'i'}.get(level, '…') }}</span>
+  <div><b>{{ title }}</b>{% if detail %}<span>{{ detail }}</span>{% endif %}</div>
+</div>
 {%- endmacro %}

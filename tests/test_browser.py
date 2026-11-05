@@ -34,6 +34,10 @@ def dashboard(tmp_path):
             project: browser-test
             environments: {{ local: {{ base_url: "http://127.0.0.1:{port}" }} }}
             defaults: {{ interval: 1s }}
+            branding: {{ name: Browser Co, accent: "#0e7490" }}
+            status_page:
+              enabled: true
+              services: [{{ service: self, name: Health API }}]
         """),
         encoding="utf-8",
     )
@@ -110,4 +114,34 @@ def test_stylesheet_and_script_load(dashboard):
         assert bg == "solid", "stylesheet not applied"
         assert page.evaluate("document.body.dataset.refresh") == "15"
         assert failed == []
+        browser.close()
+
+
+def test_public_status_page_and_dashboard_search(dashboard):
+    with sync_api.sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page()
+        errors: list[str] = []
+        page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+
+        page.goto(dashboard + "/status")  # no login needed
+        assert "/login" not in page.url
+        assert "Health API" in page.inner_text("body") and "Browser Co" in page.inner_text("body")
+        assert page.locator(".bars .seg").count() == 90
+
+        page.goto(dashboard + "/login")
+        page.fill("#password", PASSWORD)
+        page.click("button[type=submit]")
+        page.wait_for_url(dashboard + "/")
+        page.fill("#filter", "no-such-monitor")
+        assert page.locator("tr.monitor:visible").count() == 0
+        assert page.inner_text("#filter-hint") == "0 of 1 monitors"
+        page.fill("#filter", "")
+        page.click("button[data-filter=up]")
+        page.wait_for_timeout(100)
+        accent = page.evaluate(
+            "getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()"
+        )
+        assert accent == "#0e7490"  # /brand.css applied
+        assert errors == []
         browser.close()

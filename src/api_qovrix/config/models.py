@@ -379,6 +379,11 @@ class WebhookNotifier(Model):
     type: Literal["webhook"]
     url: str | None = Field(None, description="Use ${env:...}: webhook URLs usually contain a secret token.")
     headers: dict[str, str] = Field(default_factory=dict)
+    format: Literal["json", "embed", "blocks"] = Field(
+        "json",
+        description="json: full details with a 'text' field. embed: a colored card ('embeds'). "
+        "blocks: header, fields and a button ('blocks'). Ignored when 'body' is set.",
+    )
     body: Any = Field(
         None,
         description="Optional custom JSON body. Strings may use {{ alert.text }}, "
@@ -399,6 +404,65 @@ class HeartbeatSettings(Model):
     timeout: Duration = 10.0
 
 
+HEX_COLOR = r"^#[0-9a-fA-F]{6}$"
+
+
+class Branding(Model):
+    """Name, logo and color for the dashboard, the status page and alert emails."""
+
+    name: str | None = Field(None, max_length=80, description="Shown instead of the project name.")
+    logo: str | None = Field(
+        None, description="Path to a .svg, .png, .jpg or .webp file (relative to api-qovrix.yaml)."
+    )
+    accent: str = Field("#5b4fd6", pattern=HEX_COLOR, description="Accent color, e.g. '#0e7490'.")
+
+
+class StatusService(Model):
+    service: str = Field(description="Service name in your monitor files.")
+    name: str | None = Field(None, max_length=80, description="Public name (default: the service name).")
+    description: str | None = Field(None, max_length=200)
+
+
+class StatusNotice(Model):
+    """A message from the operator on the status page."""
+
+    title: str = Field(max_length=160)
+    message: str | None = Field(None, max_length=2000)
+    status: Literal["investigating", "identified", "monitoring", "resolved", "maintenance"] = "investigating"
+    started: str = Field(description="When it started, ISO 8601, e.g. '2026-11-05T10:00:00Z'.")
+    resolved: str | None = Field(None, description="When it ended (ISO 8601). Empty = still ongoing.")
+    services: list[str] = Field(default_factory=list, description="Affected services (empty = all).")
+
+    @model_validator(mode="after")
+    def _check(self) -> StatusNotice:
+        from datetime import datetime
+
+        for label, value in (("started", self.started), ("resolved", self.resolved)):
+            if value is None:
+                continue
+            try:
+                parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            except ValueError:
+                raise ValueError(f"{label}: '{value}' is not an ISO 8601 date/time") from None
+            if parsed.tzinfo is None:
+                raise ValueError(f"{label}: add a time zone, e.g. '{value}Z' for UTC")
+        return self
+
+
+class StatusPage(Model):
+    """A public, read-only status page at /status (no login, no internal details)."""
+
+    enabled: bool = False
+    title: str | None = Field(None, max_length=120, description="Default: '<name> status'.")
+    description: str | None = Field(None, max_length=500)
+    services: list[StatusService] = Field(
+        default_factory=list, description="Services to show, in this order. Others stay private."
+    )
+    days: int = Field(90, ge=7, le=365, description="Days of uptime history to show.")
+    show_incidents: bool = Field(True, description="List detected outages (times only, no error details).")
+    notices: list[StatusNotice] = Field(default_factory=list)
+
+
 class ServerSettings(Model):
     """Settings for `api-qovrix serve`."""
 
@@ -408,6 +472,10 @@ class ServerSettings(Model):
     )
     concurrency: int = Field(10, ge=1, le=500, description="Monitors running at the same time.")
     timezone: str = Field("UTC", description="Time zone for cron schedules, e.g. 'Asia/Manila'.")
+    public_url: str | None = Field(
+        None,
+        description="Public address of the dashboard (e.g. https://monitor.example.com) for links in alerts.",
+    )
     heartbeat: HeartbeatSettings | None = None
     watch: bool = Field(True, description="Reload monitor files automatically when they change.")
 
@@ -429,6 +497,8 @@ class ProjectConfig(Model):
         default_factory=list, description="Extra JSON keys to mask in reports and baselines."
     )
     server: ServerSettings = Field(default_factory=ServerSettings)
+    branding: Branding = Field(default_factory=Branding)
+    status_page: StatusPage = Field(default_factory=StatusPage)
     allowed_hosts: list[str] | None = Field(
         None,
         description="Optional allowlist of hosts monitors may call (e.g. 'api.example.com', '*.internal').",

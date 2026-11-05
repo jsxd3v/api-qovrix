@@ -11,16 +11,35 @@ api-qovrix serve --no-web             # scheduler and alerts only, no dashboard
 On your own machine you can skip the password: `api-qovrix serve` then serves an open dashboard on
 `127.0.0.1` only.
 
+![Dashboard](images/dashboard.png)
+
 ## Pages
 
-- **Overview**: every service and monitor with status (up, down, failing 1/2, paused), last check, response
-  time, 24-hour uptime and a mini response-time chart. Updates itself every 15 seconds.
-- **Monitor**: response-time chart (failures marked), the last run's checks and drift diff, recent runs
-  (click one to see its details), incidents, and a **Run now** button.
-- **Incidents**: open and resolved incidents with how long they lasted.
+- **Overview:**
+  - a banner with the overall state: green when all is up, amber when monitors are *failing* (failed, but
+    not yet `alert_after` times in a row), red when monitors are *down*
+  - one collapsible section per service: status badge, last check, response time, 24-hour uptime, a bar of
+    the last 24 hours (one block per hour; hover for details) and a response-time sparkline
+  - errors shown in a box under the monitor
+  - search and filters (All / Down / Failing / Up), kept while the page updates itself every 15 seconds
+- **Monitor:** the current error, 30-day uptime bar, response-time chart (failures marked), the last run's
+  checks and drift diff, recent runs (click one to see its details), incidents, and a **Run now** button.
+- **Incidents:** open and resolved incidents with how long they lasted.
+- **Status page:** the public page, if enabled (see [status-page.md](status-page.md)).
 
 Pages are rendered on the server, with no external scripts, fonts or CDNs, and work in light and dark mode
-and on phones.
+and on phones. Without JavaScript everything still shows, just without search and auto-update.
+
+## Branding
+
+```yaml
+branding:
+  name: Acme                    # replaces the project name in the header, login page and emails
+  logo: branding/logo.svg       # .svg, .png, .jpg or .webp, up to 512 KB, relative to api-qovrix.yaml
+  accent: "#0e7490"             # buttons, links and highlights
+```
+
+The same branding is used on the login page, the public status page and alert emails.
 
 ## Access and security
 

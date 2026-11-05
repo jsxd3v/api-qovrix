@@ -139,9 +139,13 @@ it works the same whether your API runs on a VPS, in containers or on a serverle
   reminders) and reloads monitor files when they change.
 - **Monitoring the monitor:** `/healthz` for outside uptime checks, and heartbeat pings so you're told if the
   monitoring server itself goes down.
-- **Dashboard and REST API:** status per service and monitor, 24-hour uptime, response-time charts, run
-  details with drift diffs, incidents and "Run now". Password-protected, with no external scripts.
-- **Alerts by email or webhook,** from CI (`run --notify`) or from `serve`.
+- **Dashboard and REST API:** an at-a-glance banner, per-service sections with hourly uptime bars,
+  "failing" vs "down", readable error boxes, search and filters, run details with drift diffs, incidents and
+  "Run now". Password-protected, with no external scripts, and your own name, logo and color.
+- **Public status page:** an optional `/status` page for your users, with the services you choose, 90-day
+  uptime bars, detected outages and notices you write in YAML. Never shows internal details.
+- **Alerts by email or webhook,** from CI (`run --notify`) or from `serve`: HTML email with a dashboard
+  button, and ready-made rich chat formats (a colored card, or blocks with a button).
 
 **Coming next**
 
@@ -192,6 +196,7 @@ Or with Docker Compose, next to your app: see
 - [OpenAPI](docs/openapi.md)
 - [Continuous monitoring (`serve`)](docs/serve.md)
 - [Dashboard and REST API](docs/dashboard.md)
+- [Public status page](docs/status-page.md)
 - [Alerts: email and webhook](docs/alerts.md)
 - [CI, Docker and reports](docs/ci.md)
 - [CLI reference](docs/cli.md)

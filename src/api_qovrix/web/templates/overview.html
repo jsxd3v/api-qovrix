@@ -1,42 +1,65 @@
 {% extends "base.html" %}
-{% from "_macros.html" import badge, chart %}
+{% from "_macros.html" import badge, chart, bars, banner_box %}
 {% block title %}Overview{% endblock %}
 {% block main %}
-<section class="summary">
+{{ banner_box(banner.level, banner.title, banner.detail) }}
+
+<section class="summary" aria-label="Totals">
   <div class="stat down"><b>{{ counts.down }}</b><span>down</span></div>
-  <div class="stat up"><b>{{ counts.up }}</b><span>up</span></div>
-  <div class="stat unknown"><b>{{ counts.unknown }}</b><span>waiting</span></div>
-  <div class="stat paused"><b>{{ counts.paused }}</b><span>paused</span></div>
-  <a class="stat incidents" href="/incidents"><b>{{ incidents|length }}</b><span>open incidents</span></a>
+  <div class="stat failing"><b>{{ counts.failing }}</b><span>failing</span></div>
+  <div class="stat up"><b>{{ counts.healthy }}</b><span>up</span></div>
+  <div class="stat"><b>{{ counts.waiting }}</b><span>waiting or paused</span></div>
+  <a class="stat" href="/incidents"><b>{{ incidents|length }}</b><span>open incidents</span></a>
 </section>
 
 {% if not services %}
-<p class="empty">No monitors configured. Add files under <code>monitors/</code> and restart <code>api-qovrix serve</code>.</p>
+<p class="empty">No monitors configured. Add files under <code>monitors/</code>; <code>serve</code> picks them up automatically.</p>
+{% else %}
+<div class="toolbar" role="search">
+  <label class="sr-only" for="filter">Search monitors</label>
+  <input id="filter" type="search" placeholder="Search monitors, services, tags…" autocomplete="off">
+  <div class="chips" role="group" aria-label="Show">
+    <button type="button" data-filter="all" aria-pressed="true">All</button>
+    <button type="button" data-filter="down" aria-pressed="false">Down</button>
+    <button type="button" data-filter="failing" aria-pressed="false">Failing</button>
+    <button type="button" data-filter="up" aria-pressed="false">Up</button>
+  </div>
+  <span class="hint" id="filter-hint"></span>
+</div>
 {% endif %}
 
 {% for svc in services %}
-<section class="service">
-  <h2>{{ badge(svc.state) }} {{ svc.name }}</h2>
+<details class="service" open data-service="{{ svc.name }}">
+  <summary>
+    {{ badge(svc.display) }}
+    <h2>{{ svc.name }}</h2>
+    <span class="count">{{ svc.summary }}</span>
+  </summary>
   <div class="table-wrap">
   <table>
     <thead>
-      <tr><th>Monitor</th><th>Status</th><th>Last check</th><th class="num">Time</th><th class="num">24 h uptime</th><th>Response time</th></tr>
+      <tr><th>Monitor</th><th>Status</th><th>Last check</th><th class="num">Time</th><th class="num">24 h</th><th>Last 24 hours</th><th class="hide-sm">Response time</th></tr>
     </thead>
     <tbody>
     {% for m in svc.monitors %}
-      <tr class="{{ m.state }}">
-        <td><a href="/monitors/{{ m.name }}">{{ m.name }}</a>{% if m.description %}<div class="muted small">{{ m.description }}</div>{% endif %}</td>
-        <td>{{ badge(m.state, m.note) }}</td>
-        <td><span title="{{ m.last_run_at or '' }}">{{ m.last_run }}</span>
-          {% if m.last_status in ("fail", "error") %}<div class="error small">{{ m.last_summary }}</div>{% endif %}</td>
+      {% set has_error = m.last_status in ("fail", "error") %}
+      <tr class="monitor{% if has_error %} has-error{% endif %}" data-state="{{ m.display }}"
+          data-search="{{ (m.name ~ ' ' ~ svc.name ~ ' ' ~ (m.description or '') ~ ' ' ~ m.tags|join(' '))|lower }}">
+        <td class="name-cell"><a href="/monitors/{{ m.name }}">{{ m.name }}</a>{% if m.description %}<div class="desc">{{ m.description }}</div>{% endif %}</td>
+        <td>{{ badge(m.display, m.note) }}</td>
+        <td><span title="{{ m.last_run_at or '' }}">{{ m.last_run }}</span></td>
         <td class="num">{% if m.last_duration_ms is not none %}{{ '%.0f' % m.last_duration_ms }} ms{% endif %}</td>
         <td class="num">{{ m.uptime }}</td>
-        <td>{{ chart(m.chart) }}</td>
+        <td>{{ bars(m.bars) }}</td>
+        <td class="hide-sm">{{ chart(m.chart) }}</td>
       </tr>
+      {% if has_error %}
+      <tr class="error-row" data-for="{{ m.name }}"><td class="errcell" colspan="7"><div class="errbox{% if m.state != 'down' %} warn{% endif %}">{{ m.last_summary }}</div></td></tr>
+      {% endif %}
     {% endfor %}
     </tbody>
   </table>
   </div>
-</section>
+</details>
 {% endfor %}
 {% endblock %}

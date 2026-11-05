@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% from "_macros.html" import bars, banner_box %}
+{% block title %}{{ s.title }}{% endblock %}
+{% block body_class %}status{% endblock %}
+{% block header %}{% endblock %}
+{% block main %}
+<div class="status-head">
+  {% set brand_href = "/status" %}
+  {% include "_brand.html" %}
+  <span class="faint small" title="{{ s.updated }}">Updated {{ s.updated[11:16] }} UTC</span>
+</div>
+<h1 class="sr-only">{{ s.title }}</h1>
+{% if s.description %}<p class="status-intro">{{ s.description }}</p>{% endif %}
+
+{{ banner_box(s.state, s.headline, None, "status-banner") }}
+
+{% for n in s.active %}
+<div class="notice{% if n.status == 'Maintenance' %} maintenance{% endif %}">
+  <h3>{{ n.title }}</h3>
+  <div class="meta-line">{{ n.status }} · {{ n.services|join(", ") }} · since {{ n.started[:16]|replace("T", " ") }} UTC ({{ n.duration }})</div>
+  {% if n.message %}<p>{{ n.message }}</p>{% endif %}
+</div>
+{% endfor %}
+
+<section class="panel" aria-label="Services">
+  {% for svc in s.services %}
+  <div class="svc">
+    <div class="svc-head">
+      <b>{{ svc.name }}</b>
+      <span class="state {{ svc.state }}">{{ svc.label }}</span>
+    </div>
+    {% if svc.description %}<p class="desc">{{ svc.description }}</p>{% endif %}
+    {{ bars(svc.bars, "big") }}
+    <div class="bars-legend"><span>{{ s.days }} days ago</span><span>{{ svc.uptime }} uptime</span><span>Today</span></div>
+  </div>
+  {% endfor %}
+</section>
+
+<section>
+  <h2>Past incidents</h2>
+  {% if s.history %}
+  <div class="panel">
+    <ul class="history">
+      {% for i in s.history %}
+      <li>
+        <b>{{ i.title }}</b>
+        <div class="when">{{ i.started[:16]|replace("T", " ") }} UTC · lasted {{ i.duration }} · {{ i.services|join(", ") }}</div>
+        {% if i.message %}<div class="small">{{ i.message }}</div>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% else %}
+  <p class="muted">No incidents in the last {{ s.days }} days.</p>
+  {% endif %}
+</section>
+{% endblock %}
+{% block footer %}<p class="powered">Updates every minute · Powered by api-qovrix</p>{% endblock %}

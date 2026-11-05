@@ -283,7 +283,56 @@ def load_project(
     source = cfg.openapi.source if cfg.openapi else None
     if source and not source.startswith(("http://", "https://")) and not (root / source).is_file():
         raise ConfigError(f"openapi.source not found: {source}")
+    _check_presentation(project)
     return project
+
+
+LOGO_TYPES = {".svg", ".png", ".jpg", ".jpeg", ".webp"}
+MAX_LOGO_BYTES = 512 * 1024
+
+
+def logo_path(project: Project) -> Path | None:
+    logo = project.config.branding.logo
+    return (project.root / logo).resolve() if logo else None
+
+
+def _check_presentation(project: Project) -> None:
+    """Branding, public URL and status page settings."""
+    cfg = project.config
+    where = project.config_path.name
+    logo = logo_path(project)
+    if logo is not None:
+        if logo.suffix.lower() not in LOGO_TYPES:
+            raise ConfigError(f"{where}: branding.logo must be one of {', '.join(sorted(LOGO_TYPES))}")
+        if not logo.is_file():
+            raise ConfigError(f"{where}: branding.logo not found: {cfg.branding.logo}")
+        if logo.stat().st_size > MAX_LOGO_BYTES:
+            raise ConfigError(f"{where}: branding.logo is larger than {MAX_LOGO_BYTES // 1024} KB")
+    url = cfg.server.public_url
+    if url and not url.startswith(("http://", "https://")):
+        raise ConfigError(f"{where}: server.public_url must start with http:// or https://")
+
+    page = cfg.status_page
+    known = {m.service for m in project.monitors}
+    listed: list[str] = []
+    for svc in page.services:
+        if svc.service not in known:
+            raise ConfigError(
+                f"{where}: status_page.services: no monitors use service '{svc.service}' "
+                f"(known: {', '.join(sorted(known)) or 'none'})"
+            )
+        if svc.service in listed:
+            raise ConfigError(f"{where}: status_page.services lists '{svc.service}' twice")
+        listed.append(svc.service)
+    for notice in page.notices:
+        unknown = [s for s in notice.services if s not in listed]
+        if unknown:
+            raise ConfigError(
+                f"{where}: status_page notice '{notice.title}' names services that are not on the "
+                f"status page: {', '.join(unknown)}"
+            )
+    if page.enabled and not page.services:
+        raise ConfigError(f"{where}: status_page is enabled but lists no services")
 
 
 def _resolve(mon: Monitor, path: Path, project: Project, env: Environment | None) -> ResolvedMonitor:

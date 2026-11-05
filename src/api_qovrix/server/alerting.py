@@ -14,7 +14,14 @@ from typing import Literal
 
 import httpx
 
-from api_qovrix.alerts.message import Alert, FailedMonitor, RecoveredMonitor, ci_run_url, human_duration
+from api_qovrix.alerts.message import (
+    Alert,
+    FailedMonitor,
+    RecoveredMonitor,
+    ci_run_url,
+    human_duration,
+    presentation,
+)
 from api_qovrix.alerts.notifiers import SendResult, send_all
 from api_qovrix.config.loader import Project, ResolvedMonitor
 from api_qovrix.engine.results import MonitorResult
@@ -38,6 +45,7 @@ class Transition:
     monitor: ResolvedMonitor
     result: MonitorResult
     down_for: float = 0.0
+    since: str | None = None
 
 
 def next_state(
@@ -72,14 +80,14 @@ def next_state(
     if state.state != "down":
         if new.consecutive_failures >= m.alert_after:
             new.state, new.since = "down", ts
-            transition = Transition("down", m, result)
+            transition = Transition("down", m, result, since=ts)
         elif state.state == "paused":
             new.state, new.since = "unknown", ts  # failing, but not down yet
         return new, transition
 
     last_alert = parse(state.last_alert_at)
     if m.alert_repeat and last_alert and (now - last_alert).total_seconds() >= m.alert_repeat:
-        transition = Transition("reminder", m, result)
+        transition = Transition("reminder", m, result, since=state.since)
     return new, transition
 
 
@@ -130,13 +138,14 @@ class AlertManager:
                 project=self.project.config.project,
                 environment=self.project.environment,
                 total=len([m for m in self.project.monitors if m.service == service]),
-                failed=[FailedMonitor.from_result(t.result) for t in failing],
+                failed=[FailedMonitor.from_result(t.result, t.since) for t in failing],
                 recovered=[
                     RecoveredMonitor(t.monitor.name, service, human_duration(t.down_for)) for t in recovered
                 ],
                 service=service,
                 reminder=bool(failing) and all(t.kind == "reminder" for t in failing),
                 run_url=ci_run_url(),
+                **presentation(self.project.config),
             )
             out.append((name, alert))
         return out

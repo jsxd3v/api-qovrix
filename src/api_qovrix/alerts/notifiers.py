@@ -13,6 +13,7 @@ from urllib.parse import parse_qs, unquote, urlsplit
 
 import httpx
 
+from api_qovrix.alerts import formats
 from api_qovrix.alerts.message import Alert, run_alert
 from api_qovrix.config.models import EmailNotifier, NotifierConfig, WebhookNotifier
 from api_qovrix.config.templating import render_value
@@ -38,6 +39,10 @@ class SendResult:
 def webhook_body(cfg: WebhookNotifier, alert: Alert) -> Any:
     data = alert.to_dict()
     if cfg.body is None:
+        if cfg.format == "embed":
+            return formats.embed(alert)
+        if cfg.format == "blocks":
+            return formats.blocks(alert)
         return data
     try:
         return render_value(cfg.body, {"alert": data})
@@ -109,7 +114,8 @@ def build_email(cfg: EmailNotifier, alert: Alert, sender: str) -> EmailMessage:
     msg["Subject"] = f"{cfg.subject_prefix} {alert.subject}".strip()
     msg["From"] = sender
     msg["To"] = ", ".join(cfg.to)
-    msg.set_content(alert.text)
+    msg.set_content(alert.text)  # plain text first: shown by clients that don't render HTML
+    msg.add_alternative(formats.email_html(alert), subtype="html")
     return msg
 
 
@@ -182,6 +188,7 @@ def plan_run_alerts(
     environment: str | None,
     results: list[MonitorResult],
     notify_map: dict[str, list[str]],
+    look: dict[str, Any] | None = None,
 ) -> tuple[list[tuple[str, Alert]], list[str]]:
     """One alert per notifier, listing only the failed monitors routed to it.
 
@@ -197,7 +204,7 @@ def plan_run_alerts(
         for name in targets:
             by_notifier.setdefault(name, []).append(r)
     plan = [
-        (name, run_alert(project_name, environment, len(results), monitors))
+        (name, run_alert(project_name, environment, len(results), monitors, **(look or {})))
         for name, monitors in sorted(by_notifier.items())
     ]
     return plan, unrouted

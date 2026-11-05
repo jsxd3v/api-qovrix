@@ -5,6 +5,23 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-05
+
+### Added
+- Public status page at `/status` (and `/status.json`), no login: services you choose with public names,
+  overall and per-service state, daily uptime bars (default 90 days), detected outages merged per service,
+  and operator notices written in YAML (incl. maintenance). Never shows monitor names, URLs or errors.
+- Branding (`branding: name, logo, accent`) for the dashboard, login page, status page and emails.
+- Redesigned dashboard: overall status banner, "failing" shown apart from "down", hourly uptime bars per
+  monitor, 30-day bars on monitor pages, error boxes, collapsible services, search and filters.
+- Redesigned login page.
+- HTML alert emails (plain text kept) with colored header, monitor table, drift changes, down-since times and
+  an "Open dashboard" button.
+- Webhook `format: embed` (colored card) and `format: blocks` (header, sections, button), within common
+  webhook size limits.
+- `server.public_url`: alerts link to the dashboard or the monitor's page.
+- Daily uptime summaries kept for 400 days (database schema 2; upgraded automatically from 0.3).
+
 ## [0.3.0] - 2026-11-05
 
 Shaped by feedback from the first production setup.
@@ -89,7 +106,8 @@ First release: "CI and contracts".
 - JSON Schema for `api-qovrix.yaml` and monitor files.
 - Docker image, GitHub Action, standalone binaries and an install script.
 
-[Unreleased]: https://github.com/jsxd3v/api-qovrix/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/jsxd3v/api-qovrix/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/jsxd3v/api-qovrix/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/jsxd3v/api-qovrix/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/jsxd3v/api-qovrix/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/jsxd3v/api-qovrix/compare/v0.2.0...v0.2.1

@@ -1,0 +1,3 @@
+<a class="brand" href="{{ brand_href|default('/') }}">
+  {% if brand.logo %}<img src="/brand/logo" alt="{{ brand.name }}">{% else %}<span class="logo-mark" aria-hidden="true"></span>{{ brand.name }}{% endif %}
+</a>

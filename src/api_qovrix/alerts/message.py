@@ -6,6 +6,7 @@ import os
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from typing import Any, Literal
+from urllib.parse import quote
 
 from api_qovrix.engine.results import MonitorResult
 
@@ -20,9 +21,10 @@ class FailedMonitor:
     status: str
     summary: str
     drift: list[dict[str, str]] = field(default_factory=list)
+    since: str | None = None  # ISO time the monitor went down (incidents)
 
     @classmethod
-    def from_result(cls, r: MonitorResult) -> FailedMonitor:
+    def from_result(cls, r: MonitorResult, since: str | None = None) -> FailedMonitor:
         changes: list[dict[str, str]] = []
         for step in r.steps:
             if step.drift and step.drift.failed:
@@ -31,7 +33,7 @@ class FailedMonitor:
                     for c in step.drift.changes
                     if c.severity != "info"
                 )
-        return cls(r.name, r.service, r.status, r.failure_summary, changes[:MAX_DRIFT_LINES])
+        return cls(r.name, r.service, r.status, r.failure_summary, changes[:MAX_DRIFT_LINES], since)
 
 
 @dataclass
@@ -65,11 +67,37 @@ class Alert:
     service: str | None = None
     recovered: list[RecoveredMonitor] = field(default_factory=list)
     reminder: bool = False
+    dashboard_url: str | None = None
+    brand: str | None = None
+    accent: str = "#5b4fd6"
     timestamp: str = field(default_factory=lambda: datetime.now(UTC).replace(microsecond=0).isoformat())
 
     @property
     def failed_count(self) -> int:
         return len(self.failed)
+
+    @property
+    def kind(self) -> str:
+        """down | reminder | recovered | failed | test: decides colors and headlines."""
+        if self.event == "test":
+            return "test"
+        if self.event == "run.failed":
+            return "failed"
+        if self.failed:
+            return "reminder" if self.reminder else "down"
+        return "recovered"
+
+    def monitor_url(self, name: str) -> str | None:
+        return f"{self.dashboard_url.rstrip('/')}/monitors/{quote(name)}" if self.dashboard_url else None
+
+    @property
+    def link(self) -> str | None:
+        """Where to look: the dashboard (or the single monitor), else the CI run."""
+        if self.dashboard_url:
+            if len(self.failed) == 1 and not self.recovered:
+                return self.monitor_url(self.failed[0].name)
+            return self.dashboard_url.rstrip("/") + "/"
+        return self.run_url
 
     @property
     def where(self) -> str:
@@ -108,6 +136,8 @@ class Alert:
             lines.extend(f"    {c['path']}  {c['message']} ({c['severity']})" for c in m.drift)
         if self.run_url:
             lines += ["", f"Run: {self.run_url}"]
+        if self.dashboard_url:
+            lines += [f"Dashboard: {self.dashboard_url.rstrip('/')}/"]
         return "\n".join(lines)
 
     def _incident_text(self) -> str:
@@ -119,7 +149,8 @@ class Alert:
             lines.append(f"🔴 api-qovrix: {self.failed_count} {noun} {state} in {self.service}{where}")
             lines.append("")
             for m in self.failed:
-                lines.append(f"• {m.name} {m.status}: {m.summary}")
+                since = f" (since {short_time(m.since)})" if m.since else ""
+                lines.append(f"• {m.name} {m.status}{since}: {m.summary}")
                 lines.extend(f"    {c['path']}  {c['message']} ({c['severity']})" for c in m.drift)
         if self.recovered:
             if lines:
@@ -131,12 +162,39 @@ class Alert:
                 lines.append(f"✅ api-qovrix: {n} {noun} recovered in {self.service}{where}")
                 lines.append("")
             lines.extend(f"• {r.name} (was down {r.down_for})" for r in self.recovered)
+        if self.link:
+            lines += ["", f"Open: {self.link}"]
         return "\n".join(lines)
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
-        data.update(text=self.text, subject=self.subject, failed_count=self.failed_count)
+        data.update(
+            text=self.text,
+            subject=self.subject,
+            failed_count=self.failed_count,
+            kind=self.kind,
+            link=self.link,
+        )
         return data
+
+
+def short_time(ts: str) -> str:
+    """'2026-11-05T10:05:00+00:00' -> '10:05 UTC' (same day) — compact for phones."""
+    try:
+        dt = datetime.fromisoformat(ts.replace("Z", "+00:00")).astimezone(UTC)
+    except ValueError:
+        return ts
+    today = datetime.now(UTC).date()
+    return dt.strftime("%H:%M UTC") if dt.date() == today else dt.strftime("%Y-%m-%d %H:%M UTC")
+
+
+def presentation(config: Any) -> dict[str, Any]:
+    """Dashboard link and branding for alerts, from the project config."""
+    return {
+        "dashboard_url": config.server.public_url,
+        "brand": config.branding.name or config.project,
+        "accent": config.branding.accent,
+    }
 
 
 def ci_run_url() -> str | None:
@@ -151,7 +209,9 @@ def ci_run_url() -> str | None:
     return None
 
 
-def run_alert(project: str | None, environment: str | None, total: int, failed: list[MonitorResult]) -> Alert:
+def run_alert(
+    project: str | None, environment: str | None, total: int, failed: list[MonitorResult], **look: Any
+) -> Alert:
     return Alert(
         event="run.failed",
         project=project,
@@ -159,10 +219,17 @@ def run_alert(project: str | None, environment: str | None, total: int, failed: 
         total=total,
         failed=[FailedMonitor.from_result(r) for r in failed],
         run_url=ci_run_url(),
+        **look,
     )
 
 
-def make_test_alert(project: str | None, environment: str | None) -> Alert:
+def make_test_alert(project: str | None, environment: str | None, **look: Any) -> Alert:
     return Alert(
-        event="test", project=project, environment=environment, total=0, failed=[], run_url=ci_run_url()
+        event="test",
+        project=project,
+        environment=environment,
+        total=0,
+        failed=[],
+        run_url=ci_run_url(),
+        **look,
     )

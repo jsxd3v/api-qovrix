@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% from "_macros.html" import badge, chart %}
+{% from "_macros.html" import badge, chart, bars %}
 {% block title %}{{ m.name }}{% endblock %}
 {% block main %}
 <p class="crumbs"><a href="/">Overview</a> / {{ m.service }}</p>
 <div class="head">
   <div>
-    <h1>{{ m.name }} {{ badge(m.state, m.note) }}</h1>
+    <h1>{{ m.name }} {{ badge(m.display, m.note) }}</h1>
     {% if m.description %}<p class="muted">{{ m.description }}</p>{% endif %}
     <p class="muted small">{{ m.schedule[:1]|upper }}{{ m.schedule[1:] }} · alert after {{ config.alert_after }} failures in a row
       {% if config.notify %}· notifies {{ config.notify|join(", ") }}{% else %}· no notifiers{% endif %}
@@ -14,13 +14,23 @@
   <form method="post" action="/monitors/{{ m.name }}/run"><button type="submit">Run now</button></form>
 </div>
 
+{% if m.last_status in ("fail", "error") and m.last_summary %}
+<section><div class="errbox{% if m.state != 'down' %} warn{% endif %}">{{ m.last_summary }}</div></section>
+{% endif %}
+
 <section class="cards">
   <div class="card"><span class="label">Last check</span><b>{{ m.last_run }}</b></div>
   <div class="card"><span class="label">Response time</span><b>{% if m.last_duration_ms is not none %}{{ '%.0f' % m.last_duration_ms }} ms{% else %}—{% endif %}</b></div>
   <div class="card"><span class="label">24 h uptime</span><b>{{ m.uptime }}</b></div>
 </section>
 
-<section>
+<section class="panel">
+  <h2>Uptime, last 30 days</h2>
+  {{ bars(days, "big") }}
+  <div class="bars-legend"><span>30 days ago</span><span>today</span></div>
+</section>
+
+<section class="panel chart-panel">
   <h2>Response time <span class="muted small">last {{ m.chart.count if m.chart else 0 }} runs{% if m.chart %}, max {{ '%.0f' % m.chart.max_ms }} ms · red dots are failures{% endif %}</span></h2>
   {{ chart(m.chart, "big") }}
 </section>
@@ -34,7 +44,7 @@
       <code>{{ step.method }} {{ step.url }}</code>
       <span>{% if step.status_code %}{{ step.status_code }}{% endif %}{% if step.duration_ms %} · {{ '%.0f' % step.duration_ms }} ms{% endif %}{% if step.skipped %} · skipped{% endif %}</span>
     </div>
-    {% if step.error %}<p class="error">{{ step.error }}</p>{% endif %}
+    {% if step.error %}<div class="errbox">{{ step.error }}</div>{% endif %}
     {% if step.assertions %}
     <ul class="checks">
       {% for a in step.assertions %}

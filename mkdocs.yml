@@ -19,6 +19,7 @@ nav:
   - OpenAPI: openapi.md
   - Continuous monitoring: serve.md
   - Dashboard and REST API: dashboard.md
+  - Public status page: status-page.md
   - Alerts: alerts.md
   - CI, Docker and reports: ci.md
   - CLI reference: cli.md

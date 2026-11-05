@@ -37,6 +37,12 @@ openapi:               # validate responses against a spec
 include:               # where monitor files live (default shown)
   - monitors/**/*.yaml
 
+server:
+  public_url: https://monitor.example.com   # links in alerts; more `server` settings in serve.md
+
+branding: { name: Acme, logo: branding/logo.svg, accent: "#0e7490" }   # see dashboard.md
+status_page: { enabled: false }                                       # see status-page.md
+
 redact: [customer_ref] # extra field names to treat as sensitive
 allowed_hosts:         # optional: only allow these hosts (wildcards allowed)
   - "*.example.com"

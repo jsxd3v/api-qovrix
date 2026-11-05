@@ -40,7 +40,7 @@ summary .right { margin-left: auto; color: var(--muted); font-variant-numeric: t
   </section>
 
   {% for service, monitors in services %}
-  <section class="service">
+  <section class="panel">
     <h2>{{ service }}</h2>
     {% for m in monitors %}
     <details{% if m.status in ("fail", "error") %} open{% endif %}>

@@ -55,7 +55,24 @@ link to the run (other CI systems: set `API_QOVRIX_RUN_URL`).
 Run: https://github.com/acme/shop/actions/runs/123
 ```
 
+## Links in alerts
+
+Set the dashboard's public address and every alert links to it: emails get an "Open dashboard" button, chat
+messages a link, and plain text an "Open:" line. An alert about one monitor links to that monitor's page.
+
+```yaml
+server:
+  public_url: https://monitor.example.com
+```
+
+Alerts from `serve` also say since when a monitor has been down; recovery alerts say how long it was down.
+
 ## Email
+
+Emails are sent as HTML with a plain-text version for clients that don't show HTML. The HTML version has a
+colored header (red: down, amber: still down, green: recovered), a table of monitors with the reason, drift
+changes and the time they went down, and a button to the dashboard. It uses your `branding` name and
+accent color.
 
 `smtp_url` works with any SMTP server or email provider:
 
@@ -82,12 +99,39 @@ By default the webhook receives a JSON `POST`:
   "failed_count": 2,
   "failed": [{ "name": "get-order", "service": "orders", "status": "fail", "summary": "...", "drift": [] }],
   "run_url": "https://...",
+  "link": "https://monitor.example.com/monitors/get-order",
+  "kind": "failed",
   "timestamp": "2026-11-05T09:30:00+00:00"
 }
 ```
 
-Many chat tools' incoming webhooks read the `text` field, so this works as is. If yours expects another
-shape, set `body`; strings in it can use `{{ alert.<field> }}`:
+Many chat tools' incoming webhooks read the `text` field, so this works as is.
+
+### Ready-made formats
+
+For chat tools whose incoming webhooks support richer messages, pick a `format`:
+
+| `format` | Sends | Fits tools whose webhooks accept |
+|---|---|---|
+| `json` (default) | `text` plus all details | a `text` field |
+| `embed` | a card with a colored side bar (red / amber / green), one field per monitor, a timestamp and a link | `embeds` |
+| `blocks` | a header, one section per monitor, a context line and an "Open dashboard" button | `blocks` |
+
+```yaml
+notifiers:
+  team-chat:
+    type: webhook
+    url: ${env:CHAT_WEBHOOK_URL}
+    format: embed
+```
+
+Both rich formats stay within common webhook limits: long reasons are shortened, and alerts about many
+monitors list the first ones and add "+N more".
+
+### Custom body
+
+If your tool expects another shape, set `body` (it overrides `format`). Strings in it can use
+`{{ alert.<field> }}`:
 
 ```yaml
 notifiers:

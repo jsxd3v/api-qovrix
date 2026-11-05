@@ -217,7 +217,9 @@ def test_email_starttls_login_and_message(fake_smtp):
     assert s.calls == ["ehlo", "starttls", "ehlo", "login:bot@x.com:pw"]
     assert s.sent["Subject"] == "[api-qovrix] 1 monitor failed · shop-api · production"
     assert s.sent["From"] == "bot@x.com" and s.sent["To"] == "dev@x.com, ops@x.com"
-    assert "get-order" in s.sent.get_content()
+    assert "get-order" in s.sent.get_body(("plain",)).get_content()
+    html = s.sent.get_body(("html",)).get_content()
+    assert "get-order" in html and "integer → string" in html and "#c92a2a" in html
 
 
 def test_email_implicit_tls_and_sender(fake_smtp):

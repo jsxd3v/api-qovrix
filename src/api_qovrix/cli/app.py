@@ -246,7 +246,11 @@ def _notify_run(project: Project, summary: Any, out: Console) -> None:
     from api_qovrix.alerts.notifiers import plan_run_alerts, send_all
 
     notify_map = {m.name: m.notify for m in project.monitors}
-    plan, unrouted = plan_run_alerts(project.config.project, summary.environment, summary.results, notify_map)
+    from api_qovrix.alerts.message import presentation
+
+    plan, unrouted = plan_run_alerts(
+        project.config.project, summary.environment, summary.results, notify_map, presentation(project.config)
+    )
     if unrouted:
         out.print(
             f"[yellow]![/yellow] no notifier for: {escape(', '.join(unrouted))} "
@@ -508,7 +512,9 @@ def notifiers_test(
         raise _fail(f"unknown notifier(s): {', '.join(unknown)} (known: {', '.join(configured) or 'none'})")
     if not selected:
         raise _fail("no notifiers configured. See docs/alerts.md")
-    alert = make_test_alert(project.config.project, project.environment)
+    from api_qovrix.alerts.message import presentation
+
+    alert = make_test_alert(project.config.project, project.environment, **presentation(project.config))
     results = asyncio.run(send_all(configured, [(n, alert) for n in selected]))
     for r in results:
         if r.ok:
@@ -774,6 +780,7 @@ def selftest() -> None:
                 "/incidents",
                 "/static/app.css",
                 "/static/app.js",
+                "/brand.css",
                 "/healthz",
                 "/api/v1/services",
             ):
@@ -785,9 +792,13 @@ def selftest() -> None:
             if r.status_code != 200:
                 failures.append(f"/monitors/{first}: HTTP {r.status_code}")
         await server.ctx.clients.aclose()
+        from api_qovrix.alerts.formats import email_html
+        from api_qovrix.alerts.message import make_test_alert
         from api_qovrix.engine.results import RunSummary
         from api_qovrix.report.html import render_html
 
+        if "Notifications are working" not in email_html(make_test_alert("selftest", None)):
+            failures.append("alert email template missing")
         if "run report" not in render_html(RunSummary([], None, 0.0), "selftest"):
             failures.append("HTML report template missing")
         from api_qovrix.server.cron import CronError, timezone
