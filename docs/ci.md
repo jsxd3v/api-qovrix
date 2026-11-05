@@ -12,6 +12,7 @@
     tag: smoke                      # optional
     junit: api-qovrix-results.xml   # default
     notify: true                    # send alerts when monitors fail (see alerts.md)
+    html: api-qovrix-report.html    # optional self-contained HTML report
     args: --concurrency 20          # optional extra arguments
   env:
     API_TOKEN: ${{ secrets.API_TOKEN }}
@@ -50,8 +51,22 @@ api-qovrix run --env staging --junit results.xml
 | `-v` | Every assertion and the timing breakdown (connect, TLS, time to first byte, total) |
 | `--junit results.xml` | JUnit XML: one test suite per service, one test case per monitor |
 | `--json-out report.json` | JSON report (`--json-out -` prints it to stdout) |
+| `--html report.html` | One self-contained HTML file: summary, every monitor (failures expanded), checks and drift diffs. No scripts or external files, so it opens offline and can be kept as a CI artifact or emailed |
 
 Response bodies are never included in reports, and secret values are masked.
+
+Keep the HTML report with each CI run:
+
+```yaml
+- uses: jsxd3v/api-qovrix@v0
+  with:
+    html: api-qovrix-report.html
+- uses: actions/upload-artifact@v4
+  if: always()                      # keep it when monitors fail too
+  with:
+    name: api-qovrix-report
+    path: api-qovrix-report.html
+```
 
 ## Exit codes
 

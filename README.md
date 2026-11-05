@@ -43,6 +43,7 @@ Java, C#, Ruby or Python. Monitors are YAML files; **you don't need Python** unl
 ```bash
 api-qovrix init            # creates api-qovrix.yaml and monitors/example.yaml
 api-qovrix run             # runs every monitor once; exit code 1 if anything fails
+api-qovrix serve           # keeps running: history, alerts and a dashboard at http://localhost:8080
 ```
 
 Generate monitors from your OpenAPI spec (optional):
@@ -90,9 +91,24 @@ monitors:
 
 Editors autocomplete these files from the published [JSON Schema](schema/).
 
+## Two ways to run it
+
+| | `api-qovrix run` (in CI) | `api-qovrix serve` (on a server) |
+|---|---|---|
+| What it does | Checks every monitor once and exits | Checks each monitor on its interval, around the clock |
+| Where | GitHub Actions or any CI, cron, your laptop | Any VPS, VM, Docker host or Kubernetes, next to your app |
+| Results | Terminal, exit code, JUnit, JSON, HTML report | History, dashboard and REST API at `:8080` |
+| Alerts | `--notify`: one message per run when something fails | When a monitor goes down (after N failures) and when it recovers |
+| Needs a server | No | Yes, a small one is enough |
+
+Both use the same `api-qovrix.yaml` and monitor files. api-qovrix runs next to your app, never inside it, so
+it works the same whether your API runs on a VPS, in containers or on a serverless platform.
+
+![api-qovrix dashboard](docs/images/dashboard.png)
+
 ## Features
 
-**Available now**
+**Catch breaking changes**
 
 - **Contract drift detection.** api-qovrix learns the shape of each response and reports removed fields,
   type changes, new `null`s, unseen enum values and arrays that are suddenly empty, with a readable diff.
@@ -103,25 +119,30 @@ Editors autocomplete these files from the published [JSON Schema](schema/).
   only: response values are never written to them.
 - **OpenAPI validation.** Every response is checked against your spec (3.0 and 3.1). `import openapi`
   generates monitors for safe (GET/HEAD) operations.
+
+**Write checks**
+
 - **Multi-step flows** with values passed between steps, cleanup steps that always run, and retries.
 - **Auth:** bearer, basic, API key (header or query) and OAuth2 client credentials with token caching.
 - **Assertions:** status, response time, headers, body text, JSON Schema and JSONPath with `equals`, `in`,
   `contains`, `matches`, `gt`/`lt`, `length`, `type`, `exists`, `not_empty` and more.
-- **Services:** monitors grouped per API, with shared base URL, auth, headers and links to the provider's
-  status page.
-- **Continuous monitoring:** `api-qovrix serve` runs each monitor on its interval, keeps history in SQLite,
-  and alerts when a monitor goes down (after N failures in a row) or recovers, grouped per service.
-- **Dashboard and REST API:** status of every service and monitor, response-time charts, run details with
-  drift diffs, incidents and a "Run now" button, plus a REST API. Password-protected, no external scripts.
-- **Alerts by email or webhook:** `api-qovrix run --notify` sends one message per notifier listing what
-  failed and why, including drift diffs. Works from scheduled CI, no server needed.
-- **CI-ready:** exit codes, JUnit XML, JSON reports, a GitHub Action, Docker image and standalone binaries.
+- **Services:** monitors grouped per API, with shared base URL, auth, headers and status-page links.
 - **Secrets stay secret:** only read from environment variables and masked in every report.
 
-**Coming soon**
+**Run and get told**
 
-- **Next:** `--html` report for CI, then learned latency baselines, `Deprecation` / `Sunset` / rate-limit /
-  TLS-expiry warnings, a public status page and metrics export.
+- **CI-ready:** exit codes, JUnit XML, JSON, a self-contained HTML report (`--html`), a GitHub Action, a
+  Docker image and standalone binaries.
+- **Continuous monitoring:** `serve` keeps history in SQLite and alerts when a monitor goes down or recovers,
+  grouped per service, with optional reminders.
+- **Dashboard and REST API:** status per service and monitor, 24-hour uptime, response-time charts, run
+  details with drift diffs, incidents and "Run now". Password-protected, with no external scripts.
+- **Alerts by email or webhook,** from CI (`run --notify`) or from `serve`.
+
+**Coming next**
+
+- Learned latency baselines, `Deprecation` / `Sunset` / rate-limit / TLS-expiry warnings, a public status
+  page and metrics export.
 
 ## In CI
 
@@ -143,7 +164,17 @@ jobs:
           API_TOKEN: ${{ secrets.API_TOKEN }}
 ```
 
-Any other CI works too: run the binary or `docker run --rm -v "$PWD:/work" ghcr.io/jsxd3v/api-qovrix run --junit results.xml`.
+Any other CI works too: run the binary, or
+`docker run --rm -v "$PWD:/work" ghcr.io/jsxd3v/api-qovrix run --junit results.xml --html report.html`.
+
+## On a server
+
+```bash
+API_QOVRIX_PASSWORD='a-long-password' api-qovrix serve
+```
+
+Or with Docker Compose, next to your app: see
+[`examples/docker-compose`](examples/docker-compose/docker-compose.yml) and [docs/serve.md](docs/serve.md).
 
 ## Documentation
 

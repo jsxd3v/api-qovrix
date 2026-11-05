@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:">
+  <title>{{ title }}</title>
+  <style>
+{{ css|safe }}
+.report-head { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: baseline; margin-bottom: 16px; }
+.report-head p { margin: 2px 0; }
+details { border-top: 1px solid var(--line); }
+details:first-of-type { border-top: 0; }
+summary { cursor: pointer; padding: 10px 4px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; list-style: none; }
+summary::-webkit-details-marker { display: none; }
+summary::before { content: "▸"; color: var(--muted); width: 1em; }
+details[open] > summary::before { content: "▾"; }
+summary .name { font-weight: 600; }
+summary .right { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+.inner { padding: 0 4px 12px 28px; }
+.warn { color: var(--wait); }
+  </style>
+</head>
+<body>
+<main>
+  <div class="report-head">
+    <div>
+      <h1>{{ "✔" if report.ok else "✘" }} {{ title }}</h1>
+      <p class="muted">{{ generated }}{% if report.environment %} · env {{ report.environment }}{% endif %} · {{ "%.1f" % (report.duration_ms / 1000) }} s{% if run_url %} · <a href="{{ run_url }}">CI run</a>{% endif %}</p>
+    </div>
+    <p class="muted small">api-qovrix {{ version }}</p>
+  </div>
+
+  <section class="summary">
+    <div class="stat down"><b>{{ report.counts.fail }}</b><span>failed</span></div>
+    <div class="stat down"><b>{{ report.counts.error }}</b><span>errors</span></div>
+    <div class="stat up"><b>{{ report.counts.pass }}</b><span>passed</span></div>
+    <div class="stat paused"><b>{{ report.counts.skipped }}</b><span>skipped</span></div>
+  </section>
+
+  {% for service, monitors in services %}
+  <section class="service">
+    <h2>{{ service }}</h2>
+    {% for m in monitors %}
+    <details{% if m.status in ("fail", "error") %} open{% endif %}>
+      <summary>
+        <span class="badge {{ state[m.status] }}">{{ m.status }}</span>
+        <span class="name">{{ m.name }}</span>
+        {% if m.summary %}<span class="error small">{{ m.summary }}</span>{% endif %}
+        <span class="right">{% for s in m.steps if s.status_code %}{{ s.status_code }}{% if not loop.last %}/{% endif %}{% endfor %} · {{ "%.0f" % m.duration_ms }} ms{% if m.attempts > 1 %} · attempt {{ m.attempts }}{% endif %}</span>
+      </summary>
+      <div class="inner">
+        {% for w in m.warnings %}<p class="warn small">! {{ w }}</p>{% endfor %}
+        {% for step in m.steps %}
+        <div class="step">
+          <div class="step-head">
+            <code>{{ step.method }} {{ step.url }}</code>
+            <span>{% if step.status_code %}{{ step.status_code }}{% endif %}{% if step.duration_ms %} · {{ "%.0f" % step.duration_ms }} ms{% endif %}{% if step.skipped %} · skipped{% endif %}</span>
+          </div>
+          {% if step.timings %}<p class="muted small">{% for k, v in step.timings.items() %}{{ k }} {{ "%.0f" % v }} ms{% if not loop.last %} · {% endif %}{% endfor %}</p>{% endif %}
+          {% if step.error %}<p class="error">{{ step.error }}</p>{% endif %}
+          {% if step.assertions %}
+          <ul class="checks">
+            {% for a in step.assertions %}
+            <li class="{{ 'ok' if a.passed else 'bad' }}">{{ '✔' if a.passed else '✘' }} {{ a.name }}{% if a.message and not a.passed %}: <span>{{ a.message }}</span>{% endif %}</li>
+            {% endfor %}
+          </ul>
+          {% endif %}
+          {% if step.drift and step.drift.changes %}
+          <div class="drift">
+            <b>Drift ({{ step.drift.status }})</b>
+            <table class="diff">
+              {% for c in step.drift.changes %}
+              <tr class="{{ c.severity }}"><td><code>{{ c.path }}</code></td><td>{{ c.message }}</td><td class="sev">{{ c.severity }}</td></tr>
+              {% endfor %}
+            </table>
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </details>
+    {% endfor %}
+  </section>
+  {% endfor %}
+</main>
+<footer>Response bodies are never included in this report; secret values are masked.</footer>
+</body>
+</html>

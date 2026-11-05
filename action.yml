@@ -24,6 +24,9 @@ inputs:
   junit:
     description: Path for a JUnit XML report (relative to working-directory).
     default: api-qovrix-results.xml
+  html:
+    description: Path for a self-contained HTML report (relative to working-directory). Empty = none.
+    default: ""
   notify:
     description: Send alerts to the configured notifiers when monitors fail ("true" or "false").
     default: "false"
@@ -38,6 +41,9 @@ outputs:
   junit:
     description: Path of the JUnit report.
     value: ${{ steps.run.outputs.junit }}
+  html:
+    description: Path of the HTML report (if requested).
+    value: ${{ steps.run.outputs.html }}
 
 runs:
   using: composite
@@ -60,6 +66,7 @@ runs:
         INPUT_JUNIT: ${{ inputs.junit }}
         INPUT_ARGS: ${{ inputs.args }}
         INPUT_NOTIFY: ${{ inputs.notify }}
+        INPUT_HTML: ${{ inputs.html }}
       run: |
         args=(run)
         [ -n "$INPUT_ENV" ] && args+=(--env "$INPUT_ENV")
@@ -67,8 +74,10 @@ runs:
         for t in $INPUT_TAG; do args+=(--tag "$t"); done
         [ -n "$INPUT_JUNIT" ] && args+=(--junit "$INPUT_JUNIT")
         [ "$INPUT_NOTIFY" = "true" ] && args+=(--notify)
+        [ -n "$INPUT_HTML" ] && args+=(--html "$INPUT_HTML")
         # shellcheck disable=SC2206
         extra=($INPUT_ARGS)
         echo "junit=$INPUT_JUNIT" >> "$GITHUB_OUTPUT"
+        echo "html=$INPUT_HTML" >> "$GITHUB_OUTPUT"
         # shellcheck disable=SC2086
         api-qovrix "${args[@]}" "${extra[@]}" $INPUT_MONITORS

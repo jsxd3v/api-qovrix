@@ -8,7 +8,7 @@ Every command accepts `--help`. Commands that load a project accept `--config/-c
 |---|---|
 | `api-qovrix init [DIR]` | Create `api-qovrix.yaml` and an example monitor |
 | `api-qovrix validate [--strict]` | Check config, monitor files, secrets and the OpenAPI spec |
-| `api-qovrix run [MONITOR...]` | Run monitors once (`--service`, `--tag`, `--junit`, `--json-out`, `--update-baselines`, `--notify`, `--concurrency`, `-v`) |
+| `api-qovrix run [MONITOR...]` | Run monitors once (`--service`, `--tag`, `--junit`, `--json-out`, `--update-baselines`, `--notify`, `--html`, `--concurrency`, `-v`) |
 | `api-qovrix serve [--host H] [--port P] [--no-web] [--once] [--data-dir DIR] [--log-format text\|json]` | Run monitors continuously, keep history, send down/recovered alerts, serve the dashboard and REST API |
 | `api-qovrix services` | Current status per service (from `serve` history) |
 | `api-qovrix history MONITOR [--limit N]` | Recent runs of one monitor |

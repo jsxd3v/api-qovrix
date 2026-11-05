@@ -189,6 +189,9 @@ def run(
     env: EnvOpt = None,
     env_file: EnvFileOpt = None,
     junit: Annotated[Path | None, typer.Option(help="Write a JUnit XML report.")] = None,
+    html: Annotated[
+        Path | None, typer.Option("--html", help="Write a self-contained HTML report (open it in a browser).")
+    ] = None,
     json_out: Annotated[
         Path | None, typer.Option("--json-out", help="Write a JSON report to this file ('-' for stdout).")
     ] = None,
@@ -227,6 +230,11 @@ def run(
     if junit is not None:
         junit.parent.mkdir(parents=True, exist_ok=True)
         junit.write_text(to_junit(summary), encoding="utf-8")
+    if html is not None:
+        from api_qovrix.report.html import render_html
+
+        html.parent.mkdir(parents=True, exist_ok=True)
+        html.write_text(render_html(summary, project.config.project), encoding="utf-8")
     if update_baselines and not to_stdout:
         console.print("[dim]Baselines updated in .api-qovrix/baselines/ — review and commit them.[/dim]")
     if notify:
@@ -774,6 +782,11 @@ def selftest() -> None:
             if r.status_code != 200:
                 failures.append(f"/monitors/{first}: HTTP {r.status_code}")
         await server.ctx.clients.aclose()
+        from api_qovrix.engine.results import RunSummary
+        from api_qovrix.report.html import render_html
+
+        if "run report" not in render_html(RunSummary([], None, 0.0), "selftest"):
+            failures.append("HTML report template missing")
         return failures
 
     with tempfile.TemporaryDirectory() as tmp:

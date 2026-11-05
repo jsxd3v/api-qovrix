@@ -106,6 +106,9 @@ Operators for `jsonpath` and `header` (several can be combined; all must pass):
 | `exists` | `true`: the path matches something; `false`: it doesn't |
 | `not_empty` | the value is not `null`, `""`, `[]` or `{}` |
 
+In YAML, quote a JSONPath that contains `*` when it sits inside `{ }` or `[ ]`, because `*` has a meaning of
+its own in YAML: `{ jsonpath: "$[*].email", not_empty: true }`. On its own line no quotes are needed.
+
 JSONPath uses the extended syntax of [jsonpath-ng](https://github.com/h2non/jsonpath-ng): `$.items[*].id`,
 `$..price`, `$.items[?(@.stock < 1)]`. A path with a wildcard or filter returns a list:
 

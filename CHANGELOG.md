@@ -5,6 +5,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-05
+
+Second release: alerts, continuous monitoring and the dashboard.
+
 ### Added
 - Alerts by email (any SMTP server) and webhook (JSON POST, custom body template).
 - `api-qovrix run --notify`: one alert per notifier listing the failed monitors, drift changes and the CI
@@ -22,6 +26,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
 - Security: password login (`API_QOVRIX_PASSWORD`) with signed HttpOnly cookies and rate limiting, API keys
   (`API_QOVRIX_API_KEY`), strict CSP; refuses to listen beyond localhost without a password.
 - Docker image: history volume at `/data`, dashboard on port 8080; Docker Compose example with health check.
+- `api-qovrix run --html report.html`: a self-contained HTML report (no scripts or external files); the
+  GitHub Action has an `html` input.
+- Hidden `api-qovrix selftest` command, used to smoke-test release binaries and the Docker image.
 
 ## [0.1.0] - 2026-11-04
 
@@ -41,5 +48,6 @@ First release: "CI and contracts".
 - JSON Schema for `api-qovrix.yaml` and monitor files.
 - Docker image, GitHub Action, standalone binaries and an install script.
 
-[Unreleased]: https://github.com/jsxd3v/api-qovrix/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/jsxd3v/api-qovrix/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/jsxd3v/api-qovrix/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jsxd3v/api-qovrix/releases/tag/v0.1.0

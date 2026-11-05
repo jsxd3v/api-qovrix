@@ -81,3 +81,11 @@ From now on, `api-qovrix run` fails when a response changes in a breaking way. S
    ```
 
 If you have an OpenAPI spec, generate monitors from it: `api-qovrix import openapi ./openapi.yaml`.
+
+## Next steps
+
+- **Run it in CI:** add the GitHub Action, or `api-qovrix run --junit results.xml --html report.html` in any
+  CI. See [ci.md](ci.md).
+- **Get alerts:** add an email or webhook notifier and use `run --notify`. See [alerts.md](alerts.md).
+- **Monitor around the clock:** `api-qovrix serve` on a small server gives you history, down/recovered
+  alerts and a dashboard. See [serve.md](serve.md) and [dashboard.md](dashboard.md).
