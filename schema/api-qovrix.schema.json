@@ -187,6 +187,62 @@
       "title": "DriftConfig",
       "type": "object"
     },
+    "EmailNotifier": {
+      "additionalProperties": false,
+      "description": "Send alerts by email through any SMTP server.",
+      "properties": {
+        "from": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "From address (default: the SMTP user).",
+          "title": "From"
+        },
+        "smtp_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "smtp://user:password@host:587 (STARTTLS when offered) or smtps://user:password@host:465. Use ${env:SMTP_URL}: it contains a password.",
+          "title": "Smtp Url"
+        },
+        "subject_prefix": {
+          "default": "[api-qovrix]",
+          "title": "Subject Prefix",
+          "type": "string"
+        },
+        "to": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "To",
+          "type": "array"
+        },
+        "type": {
+          "const": "email",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "to"
+      ],
+      "title": "EmailNotifier",
+      "type": "object"
+    },
     "Environment": {
       "additionalProperties": false,
       "properties": {
@@ -216,21 +272,6 @@
         }
       },
       "title": "Environment",
-      "type": "object"
-    },
-    "NotifierConfig": {
-      "additionalProperties": true,
-      "description": "Notifier settings (used by `api-qovrix serve`, v0.2). Extra keys depend on the type.",
-      "properties": {
-        "type": {
-          "title": "Type",
-          "type": "string"
-        }
-      },
-      "required": [
-        "type"
-      ],
-      "title": "NotifierConfig",
       "type": "object"
     },
     "OAuth2ClientCredentials": {
@@ -476,6 +517,62 @@
       },
       "title": "ServiceConfig",
       "type": "object"
+    },
+    "WebhookNotifier": {
+      "additionalProperties": false,
+      "description": "POST a JSON message to a URL. Most chat and incident tools accept incoming webhooks.",
+      "properties": {
+        "body": {
+          "default": null,
+          "description": "Optional custom JSON body. Strings may use {{ alert.text }}, {{ alert.failed_count }}, ... Default: a JSON object with a 'text' field and the full details.",
+          "title": "Body"
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Headers",
+          "type": "object"
+        },
+        "timeout": {
+          "anyOf": [
+            {
+              "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+              "type": "string"
+            },
+            {
+              "minimum": 0,
+              "type": "number"
+            }
+          ],
+          "default": 10.0,
+          "description": "Duration, e.g. '500ms', '10s', '1m', '2h' (a number means seconds).",
+          "title": "Timeout"
+        },
+        "type": {
+          "const": "webhook",
+          "title": "Type",
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Use ${env:...}: webhook URLs usually contain a secret token.",
+          "title": "Url"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "WebhookNotifier",
+      "type": "object"
     }
   },
   "$id": "https://raw.githubusercontent.com/jsxd3v/api-qovrix/main/schema/api-qovrix.schema.json",
@@ -529,7 +626,21 @@
     },
     "notifiers": {
       "additionalProperties": {
-        "$ref": "#/$defs/NotifierConfig"
+        "discriminator": {
+          "mapping": {
+            "email": "#/$defs/EmailNotifier",
+            "webhook": "#/$defs/WebhookNotifier"
+          },
+          "propertyName": "type"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/$defs/EmailNotifier"
+          },
+          {
+            "$ref": "#/$defs/WebhookNotifier"
+          }
+        ]
       },
       "title": "Notifiers",
       "type": "object"

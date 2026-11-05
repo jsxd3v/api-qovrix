@@ -24,6 +24,9 @@ inputs:
   junit:
     description: Path for a JUnit XML report (relative to working-directory).
     default: api-qovrix-results.xml
+  notify:
+    description: Send alerts to the configured notifiers when monitors fail ("true" or "false").
+    default: "false"
   args:
     description: Extra arguments for 'api-qovrix run'.
     default: ""
@@ -56,12 +59,14 @@ runs:
         INPUT_MONITORS: ${{ inputs.monitors }}
         INPUT_JUNIT: ${{ inputs.junit }}
         INPUT_ARGS: ${{ inputs.args }}
+        INPUT_NOTIFY: ${{ inputs.notify }}
       run: |
         args=(run)
         [ -n "$INPUT_ENV" ] && args+=(--env "$INPUT_ENV")
         for s in $INPUT_SERVICE; do args+=(--service "$s"); done
         for t in $INPUT_TAG; do args+=(--tag "$t"); done
         [ -n "$INPUT_JUNIT" ] && args+=(--junit "$INPUT_JUNIT")
+        [ "$INPUT_NOTIFY" = "true" ] && args+=(--notify)
         # shellcheck disable=SC2206
         extra=($INPUT_ARGS)
         echo "junit=$INPUT_JUNIT" >> "$GITHUB_OUTPUT"

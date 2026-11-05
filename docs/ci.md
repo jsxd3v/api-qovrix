@@ -11,6 +11,7 @@
     service: payments email         # optional, space-separated
     tag: smoke                      # optional
     junit: api-qovrix-results.xml   # default
+    notify: true                    # send alerts when monitors fail (see alerts.md)
     args: --concurrency 20          # optional extra arguments
   env:
     API_TOKEN: ${{ secrets.API_TOKEN }}

@@ -32,7 +32,9 @@ app = typer.Typer(
 )
 import_app = typer.Typer(help="Generate monitors from other formats.", no_args_is_help=True)
 drift_app = typer.Typer(help="Inspect, learn and accept response-shape baselines.", no_args_is_help=True)
+notifiers_app = typer.Typer(help="Alert destinations: list them or send a test alert.", no_args_is_help=True)
 app.add_typer(import_app, name="import")
+app.add_typer(notifiers_app, name="notifiers")
 app.add_typer(drift_app, name="drift")
 
 console = Console(highlight=False, soft_wrap=True)
@@ -136,6 +138,15 @@ def validate(
         style = "red" if strict else "yellow"
         console.print(f"[{style}]![/{style}] secret {name} has no value{escape(hint)}")
         problems += 1
+    for name, cfg in project.config.notifiers.items():
+        target = getattr(cfg, "smtp_url", None) if cfg.type == "email" else getattr(cfg, "url", None)
+        if not target:
+            style = "red" if strict else "yellow"
+            field = "smtp_url" if cfg.type == "email" else "url"
+            console.print(
+                f"[{style}]![/{style}] notifier {escape(name)} has no {field} (is its env variable set?)"
+            )
+            problems += 1
     if strict and problems:
         raise typer.Exit(1)
 
@@ -191,6 +202,9 @@ def run(
     verbose: Annotated[
         bool, typer.Option("--verbose", "-v", help="Show every assertion and timings.")
     ] = False,
+    notify: Annotated[
+        bool, typer.Option("--notify", help="Send an alert to each monitor's notifiers when monitors fail.")
+    ] = False,
 ) -> None:
     """Run monitors once. Exit code 1 when any monitor fails (for CI)."""
     project = _load(config, env, env_file)
@@ -215,7 +229,91 @@ def run(
         junit.write_text(to_junit(summary), encoding="utf-8")
     if update_baselines and not to_stdout:
         console.print("[dim]Baselines updated in .api-qovrix/baselines/ — review and commit them.[/dim]")
+    if notify:
+        _notify_run(project, summary, err if to_stdout else console)
     raise typer.Exit(0 if summary.ok else 1)
+
+
+def _notify_run(project: Project, summary: Any, out: Console) -> None:
+    from api_qovrix.alerts.notifiers import plan_run_alerts, send_all
+
+    notify_map = {m.name: m.notify for m in project.monitors}
+    plan, unrouted = plan_run_alerts(project.config.project, summary.environment, summary.results, notify_map)
+    if unrouted:
+        out.print(
+            f"[yellow]![/yellow] no notifier for: {escape(', '.join(unrouted))} "
+            "(set 'notify' on the monitor, its service or defaults)"
+        )
+    if not plan:
+        return
+    results = asyncio.run(send_all(project.config.notifiers, plan))
+    for r in results:
+        if r.ok:
+            out.print(f"[green]alert sent[/green] → {escape(r.name)}")
+        else:
+            out.print(f"[red]alert failed[/red] → {escape(r.name)}: {escape(r.message)}")
+
+
+# --------------------------------------------------------------------------- notifiers
+
+
+@notifiers_app.command("list")
+def notifiers_list(
+    config: ConfigOpt = None,
+    env: EnvOpt = None,
+    env_file: EnvFileOpt = None,
+) -> None:
+    """Show configured notifiers and which monitors use them."""
+    from api_qovrix.config.models import EmailNotifier
+
+    project = _load(config, env, env_file)
+    if not project.config.notifiers:
+        console.print("No notifiers configured. See docs/alerts.md")
+        raise typer.Exit(0)
+    table = Table(box=None, padding=(0, 2), header_style="bold")
+    table.add_column("notifier")
+    table.add_column("type")
+    table.add_column("ready")
+    table.add_column("monitors")
+    for name, cfg in project.config.notifiers.items():
+        target = cfg.smtp_url if isinstance(cfg, EmailNotifier) else cfg.url
+        used = [m.name for m in project.monitors if name in m.notify]
+        table.add_row(
+            escape(name),
+            cfg.type,
+            "[green]yes[/green]" if target else "[red]no: URL not set[/red]",
+            escape(", ".join(used)) or "[dim]none[/dim]",
+        )
+    console.print(table)
+
+
+@notifiers_app.command("test")
+def notifiers_test(
+    names: Annotated[list[str] | None, typer.Argument(help="Notifier names (default: all).")] = None,
+    config: ConfigOpt = None,
+    env: EnvOpt = None,
+    env_file: EnvFileOpt = None,
+) -> None:
+    """Send a test alert to check that notifications arrive."""
+    from api_qovrix.alerts.message import make_test_alert
+    from api_qovrix.alerts.notifiers import send_all
+
+    project = _load(config, env, env_file)
+    configured = project.config.notifiers
+    selected = names or list(configured)
+    unknown = [n for n in selected if n not in configured]
+    if unknown:
+        raise _fail(f"unknown notifier(s): {', '.join(unknown)} (known: {', '.join(configured) or 'none'})")
+    if not selected:
+        raise _fail("no notifiers configured. See docs/alerts.md")
+    alert = make_test_alert(project.config.project, project.environment)
+    results = asyncio.run(send_all(configured, [(n, alert) for n in selected]))
+    for r in results:
+        if r.ok:
+            console.print(f"[green]✔[/green] {escape(r.name)}: test alert sent")
+        else:
+            console.print(f"[red]✘[/red] {escape(r.name)}: {escape(r.message)}")
+    raise typer.Exit(0 if all(r.ok for r in results) else 1)
 
 
 # --------------------------------------------------------------------------- drift

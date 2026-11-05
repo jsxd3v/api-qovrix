@@ -5,6 +5,13 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Alerts by email (any SMTP server) and webhook (JSON POST, custom body template).
+- `api-qovrix run --notify`: one alert per notifier listing the failed monitors, drift changes and the CI
+  run link.
+- `api-qovrix notifiers list` and `api-qovrix notifiers test`.
+- `validate` warns when a notifier's URL is not set; the GitHub Action has a `notify` input.
+
 ## [0.1.0] - 2026-11-04
 
 First release: "CI and contracts".

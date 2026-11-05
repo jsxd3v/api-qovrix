@@ -312,11 +312,35 @@ class OpenAPIConfig(Model):
     validate_responses: bool = True
 
 
-class NotifierConfig(BaseModel):
-    """Notifier settings (used by `api-qovrix serve`, v0.2). Extra keys depend on the type."""
+class EmailNotifier(Model):
+    """Send alerts by email through any SMTP server."""
 
-    model_config = ConfigDict(extra="allow")
-    type: str
+    type: Literal["email"]
+    to: list[str] = Field(min_length=1)
+    smtp_url: str | None = Field(
+        None,
+        description="smtp://user:password@host:587 (STARTTLS when offered) or "
+        "smtps://user:password@host:465. Use ${env:SMTP_URL}: it contains a password.",
+    )
+    sender: str | None = Field(None, alias="from", description="From address (default: the SMTP user).")
+    subject_prefix: str = "[api-qovrix]"
+
+
+class WebhookNotifier(Model):
+    """POST a JSON message to a URL. Most chat and incident tools accept incoming webhooks."""
+
+    type: Literal["webhook"]
+    url: str | None = Field(None, description="Use ${env:...}: webhook URLs usually contain a secret token.")
+    headers: dict[str, str] = Field(default_factory=dict)
+    body: Any = Field(
+        None,
+        description="Optional custom JSON body. Strings may use {{ alert.text }}, "
+        "{{ alert.failed_count }}, ... Default: a JSON object with a 'text' field and the full details.",
+    )
+    timeout: Duration = 10.0
+
+
+NotifierConfig = Annotated[EmailNotifier | WebhookNotifier, Field(discriminator="type")]
 
 
 class ProjectConfig(Model):
