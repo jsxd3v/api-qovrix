@@ -180,9 +180,7 @@ def test_status_view_states_bars_incidents_and_privacy(root, tmp_path):
     view = asyncio.run(go())
     storage.close()
     assert (
-        view.title == "Lumora status"
-        and view.state == "partial_outage"
-        and view.headline == "Partial outage"
+        view.title == "Lumora status" and view.state == "partial_outage" and view.headline == "Partial outage"
     )
     states = {s.name: s.state for s in view.services}
     assert states == {
