@@ -46,7 +46,7 @@ header.top {
 }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--text); white-space: nowrap; }
 .brand:hover { text-decoration: none; }
-.brand img { height: 28px; width: auto; max-width: 140px; display: block; }
+.brand img { height: 28px; width: auto; max-width: 48px; display: block; border-radius: 7px; }
 .logo-mark { width: 26px; height: 26px; border-radius: 8px; background: var(--accent); display: grid; place-items: center; }
 .logo-mark::after { content: ""; width: 12px; height: 7px; border-left: 2.5px solid #fff; border-bottom: 2.5px solid #fff; transform: translateY(-2px) rotate(-45deg); }
 nav { display: flex; gap: 4px; height: 100%; }
@@ -240,7 +240,7 @@ body.login {
   padding: 32px; box-shadow: 0 10px 30px rgba(16, 24, 40, .08);
 }
 .login-box .brand { font-size: 1.25rem; justify-content: center; margin-bottom: 4px; }
-.login-box .brand img { height: 40px; max-width: 200px; }
+.login-box .brand img { height: 40px; max-width: 64px; }
 .login-box .sub { text-align: center; color: var(--muted); margin: 0 0 24px; }
 .login-box form { display: flex; flex-direction: column; gap: 8px; }
 .login-box label { font-weight: 600; font-size: 0.9rem; }

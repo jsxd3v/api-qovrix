@@ -32,7 +32,7 @@ version: 1
 project: shop
 environments: { prod: { base_url: "https://api.test" } }
 server: { public_url: "https://monitor.example.com" }
-branding: { name: Lumora, logo: logo.svg, accent: "#0e7490" }
+branding: { name: Example Co, logo: logo.svg, accent: "#0e7490" }
 status_page:
   enabled: true
   description: Live status.
@@ -180,7 +180,9 @@ def test_status_view_states_bars_incidents_and_privacy(root, tmp_path):
     view = asyncio.run(go())
     storage.close()
     assert (
-        view.title == "Lumora status" and view.state == "partial_outage" and view.headline == "Partial outage"
+        view.title == "Example Co status"
+        and view.state == "partial_outage"
+        and view.headline == "Partial outage"
     )
     states = {s.name: s.state for s in view.services}
     assert states == {
@@ -236,7 +238,7 @@ def test_status_page_is_public_and_hides_internals(root, tmp_path):
         assert c.get("/", follow_redirects=False).status_code == 303  # dashboard still needs a login
         r = c.get("/status")
         assert r.status_code == 200 and r.headers["cache-control"] == "public, max-age=30"
-        assert "Lumora" in r.text and "Website" in r.text and "Reports API" in r.text
+        assert "Example Co" in r.text and "Website" in r.text and "Reports API" in r.text
         assert "Planned database upgrade" in r.text and "Reports may be slow." in r.text
         for private in ("monthly", "secret-internal-check", "/internal/", "boom", "<script>alert", "Log out"):
             assert private not in r.text, private
@@ -250,7 +252,7 @@ def test_status_page_is_public_and_hides_internals(root, tmp_path):
         logo = c.get("/brand/logo")
         assert logo.status_code == 200 and logo.headers["content-type"].startswith("image/svg+xml")
         login = c.get("/login").text
-        assert "Lumora" in login and 'href="/status"' in login and "/brand/logo" in login
+        assert "Example Co" in login and 'href="/status"' in login and "/brand/logo" in login
 
         server.project.config.status_page.enabled = False
         assert c.get("/status", follow_redirects=False).status_code in (303, 404)
@@ -325,7 +327,7 @@ def alert(n_failed=1, **kw):
         failed=failed,
         service="reports",
         dashboard_url="https://monitor.example.com",
-        brand="Lumora",
+        brand="Example Co",
         accent="#0e7490",
     )
     return Alert(**{**defaults, **kw})

@@ -35,7 +35,8 @@ and on phones. Without JavaScript everything still shows, just without search an
 ```yaml
 branding:
   name: Acme                    # replaces the project name in the header, login page and emails
-  logo: branding/logo.svg       # .svg, .png, .jpg or .webp, up to 512 KB, relative to api-qovrix.yaml
+  logo: branding/logo.svg       # a square icon (no text): the name is shown next to it. .svg, .png, .jpg or
+                                # .webp, up to 512 KB, relative to api-qovrix.yaml
   accent: "#0e7490"             # buttons, links and highlights
 ```
 

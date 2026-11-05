@@ -12,7 +12,7 @@ names, URLs, error messages and drift details never appear on it.
 # api-qovrix.yaml
 branding:                       # used by the status page, the dashboard and alert emails
   name: Acme
-  logo: branding/logo.svg       # .svg, .png, .jpg or .webp, up to 512 KB
+  logo: branding/logo.svg       # a square icon; the name is shown next to it (.svg/.png/.jpg/.webp, ≤ 512 KB)
   accent: "#0e7490"
 
 status_page:
