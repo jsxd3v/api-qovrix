@@ -78,7 +78,7 @@ def test_cli_html_option(tmp_path):
     finally:
         os.chdir(old)
     assert r.exit_code == 0, r.output
-    html = (tmp_path / "reports/run.html").read_text()
+    html = (tmp_path / "reports/run.html").read_text(encoding="utf-8")
     assert "example-todo" in html and "example-post-flow" in html and "✔" in html
 
 

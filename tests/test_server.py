@@ -146,7 +146,7 @@ def test_messages_and_durations():
 
 
 def test_storage(storage, tmp_path):
-    assert (tmp_path / "data" / ".gitignore").read_text().strip().endswith("*")
+    assert (tmp_path / "data" / ".gitignore").read_text(encoding="utf-8").strip().endswith("*")
 
     async def go():
         old = (T0 - timedelta(days=40)).isoformat()

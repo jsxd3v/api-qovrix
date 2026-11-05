@@ -20,3 +20,19 @@ def make_project(tmp_path: Path) -> Callable[..., Path]:
         return tmp_path
 
     return _make
+
+
+def pytest_runtest_logreport(report):
+    """In GitHub Actions, publish failing tests as annotations (readable on the run page and via the API)."""
+    import os
+    import sys
+
+    if not report.failed or os.environ.get("GITHUB_ACTIONS") != "true":
+        return
+    text = str(report.longrepr)
+    lines = [line for line in text.splitlines() if line.strip()][-25:]
+    message = "\n".join(lines)[-3000:]
+    escaped = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+    title = report.nodeid.replace("%", "%25").replace(":", "%3A").replace(",", "%2C")
+    sys.__stdout__.write(f"\n::error title={title}::{escaped}\n")
+    sys.__stdout__.flush()

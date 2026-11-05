@@ -186,7 +186,7 @@ def test_drift_cli_commands(make_project, monkeypatch):
         r = runner.invoke(app, ["drift", "learn", "--samples", "2", "--delay", "0"])
         assert r.exit_code == 0, r.output
         assert "skipping monitors with non-GET steps" in r.output and "round 2/2" in r.output
-        data = json.loads((root / ".api-qovrix/baselines/item.json").read_text())
+        data = json.loads((root / ".api-qovrix/baselines/item.json").read_text(encoding="utf-8"))
         assert data["steps"]["main"]["samples"] == 2 and data["steps"]["main"]["accepted"] is False
 
         route.respond(200, json={"state": "ok"})
@@ -195,7 +195,7 @@ def test_drift_cli_commands(make_project, monkeypatch):
 
         r = runner.invoke(app, ["drift", "accept", "item"])
         assert r.exit_code == 0, r.output
-        data = json.loads((root / ".api-qovrix/baselines/item.json").read_text())
+        data = json.loads((root / ".api-qovrix/baselines/item.json").read_text(encoding="utf-8"))
         main = data["steps"]["main"]
         assert main["accepted"] is True and "n" not in main["shape"]["props"]
 

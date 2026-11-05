@@ -209,7 +209,7 @@ def test_drift_lifecycle(make_project):
     assert any("no baseline" in w for w in first.warnings)
 
     assert run(root, mode="update").results[0].steps[0].drift.status == "updated"
-    baseline = json.loads((root / ".api-qovrix/baselines/order.json").read_text())
+    baseline = json.loads((root / ".api-qovrix/baselines/order.json").read_text(encoding="utf-8"))
     assert baseline["steps"]["main"]["accepted"] is True
     assert "a@b.c" not in json.dumps(baseline)  # values of sensitive fields are not stored
 
