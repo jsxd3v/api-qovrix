@@ -5,6 +5,10 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+- Dashboard on Windows: stylesheet and script are always served with the right content type, even when the
+  Windows registry maps `.js`/`.css` to `text/plain` (browsers refused them, so pages showed unstyled).
+
 ## [0.2.0] - 2026-11-05
 
 Second release: alerts, continuous monitoring and the dashboard.

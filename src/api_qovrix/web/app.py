@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import mimetypes
 from datetime import UTC, datetime
 from importlib import resources
 from pathlib import Path
@@ -25,6 +26,16 @@ CSP = (
     "base-uri 'none'; form-action 'self'; frame-ancestors 'none'"
 )
 PUBLIC_PATHS = ("/login", "/healthz", "/static/")
+
+
+STATIC_TYPES = {".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml"}
+
+
+def _fix_static_types() -> None:
+    """Windows can map .js/.css to text/plain in the registry; with `nosniff`, browsers would refuse them."""
+    mimetypes.init()
+    for ext, mime in STATIC_TYPES.items():
+        mimetypes.add_type(mime, ext)
 
 
 def _web_dir() -> Path:
@@ -53,6 +64,7 @@ def create_app(server: Server, auth: Auth, clock: Any = None) -> FastAPI:
         redoc_url=None,
         openapi_url="/api/v1/openapi.json",
     )
+    _fix_static_types()
     app.mount("/static", StaticFiles(directory=str(_web_dir() / "static")), name="static")
 
     # ------------------------------------------------------------------ middleware

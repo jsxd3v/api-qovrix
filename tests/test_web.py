@@ -281,3 +281,19 @@ def test_cli_serve_refuses_public_without_password(make_project, monkeypatch):
         assert r.exit_code == 2 and "at least 8" in r.output
     finally:
         os.chdir(old)
+
+
+def test_static_types_survive_a_bad_windows_registry(server):
+    import mimetypes
+
+    mimetypes.init()
+    mimetypes.add_type("text/plain", ".js")  # what some Windows registries report
+    mimetypes.add_type("text/plain", ".css")
+    try:
+        with client(server, password=None) as c:
+            assert c.get("/static/app.js").headers["content-type"].startswith("text/javascript")
+            assert c.get("/static/app.css").headers["content-type"].startswith("text/css")
+            assert c.get("/static/favicon.svg").headers["content-type"].startswith("image/svg+xml")
+    finally:
+        mimetypes.add_type("text/javascript", ".js")
+        mimetypes.add_type("text/css", ".css")
