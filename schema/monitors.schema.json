@@ -496,6 +496,44 @@
     "Monitor": {
       "additionalProperties": false,
       "properties": {
+        "alert_after": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Failures in a row before alerting (serve).",
+          "title": "Alert After"
+        },
+        "alert_repeat": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+                  "type": "string"
+                },
+                {
+                  "minimum": 0,
+                  "type": "number"
+                }
+              ],
+              "description": "Duration, e.g. '500ms', '10s', '1m', '2h' (a number means seconds)."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Remind while still down, e.g. '1h' (serve).",
+          "title": "Alert Repeat"
+        },
         "assert": {
           "items": {
             "$ref": "#/$defs/Assertion"
@@ -559,6 +597,7 @@
             }
           ],
           "default": null,
+          "description": "Not supported yet: use 'interval'.",
           "title": "Cron"
         },
         "description": {
@@ -954,6 +993,44 @@
     "ServiceConfig": {
       "additionalProperties": false,
       "properties": {
+        "alert_after": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Failures in a row before alerting (serve).",
+          "title": "Alert After"
+        },
+        "alert_repeat": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+                  "type": "string"
+                },
+                {
+                  "minimum": 0,
+                  "type": "number"
+                }
+              ],
+              "description": "Duration, e.g. '500ms', '10s', '1m', '2h' (a number means seconds)."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Remind while still down, e.g. '1h' (serve).",
+          "title": "Alert Repeat"
+        },
         "auth": {
           "anyOf": [
             {

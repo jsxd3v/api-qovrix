@@ -11,6 +11,11 @@ and the project uses [Semantic Versioning](https://semver.org/).
   run link.
 - `api-qovrix notifiers list` and `api-qovrix notifiers test`.
 - `validate` warns when a notifier's URL is not set; the GitHub Action has a `notify` input.
+- `api-qovrix serve`: runs monitors on their intervals, stores history in SQLite (with retention), and sends
+  alerts when a monitor is down after `alert_after` failures in a row, optional reminders (`alert_repeat`) and
+  recovery messages, grouped per service (`server.group_wait`). `--once` and JSON logs.
+- `api-qovrix services` and `api-qovrix history`.
+- Docker image: history volume at `/data`; Docker Compose example.
 
 ## [0.1.0] - 2026-11-04
 

@@ -4,7 +4,8 @@ api-qovrix can send an alert by **email** or **webhook** when monitors fail.
 
 - `api-qovrix run --notify` sends alerts at the end of a run. Use it in scheduled CI jobs to get alerts
   without running a server.
-- `api-qovrix serve` (v0.2) will send them continuously, with recovery messages.
+- `api-qovrix serve` sends them continuously: when a monitor goes down and when it recovers (see
+  [serve.md](serve.md)).
 
 ## Configure notifiers
 

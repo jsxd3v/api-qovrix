@@ -47,7 +47,7 @@ class RunOptions:
 
 
 @dataclass
-class _Context:
+class RunContext:
     project: Project
     options: RunOptions
     clients: HttpClients
@@ -87,16 +87,28 @@ def select_monitors(
     return selected
 
 
+def make_context(project: Project, options: RunOptions, load_spec: bool = True) -> RunContext:
+    """Shared state for runs: HTTP clients, OAuth2 tokens, the OpenAPI spec and baselines.
+
+    `serve` keeps one context alive for its whole lifetime; close it with `await ctx.clients.aclose()`.
+    """
+    ctx = RunContext(
+        project=project,
+        options=options,
+        clients=HttpClients(options.transport),
+        store=BaselineStore(project.baselines_dir),
+    )
+    if project.config.openapi and load_spec:
+        ctx.spec = OpenAPISpec.load(project.config.openapi.source, project.root)
+    return ctx
+
+
 async def run_monitors(
     project: Project, monitors: list[ResolvedMonitor], options: RunOptions | None = None
 ) -> RunSummary:
     options = options or RunOptions()
-    clients = HttpClients(options.transport)
-    ctx = _Context(
-        project=project, options=options, clients=clients, store=BaselineStore(project.baselines_dir)
-    )
-    if project.config.openapi and any(m.validate_openapi for m in monitors):
-        ctx.spec = OpenAPISpec.load(project.config.openapi.source, project.root)
+    ctx = make_context(project, options, load_spec=any(m.validate_openapi for m in monitors))
+    clients = ctx.clients
 
     semaphore = asyncio.Semaphore(max(1, options.concurrency))
     started = time.perf_counter()
@@ -119,7 +131,7 @@ async def run_monitors(
     )
 
 
-async def run_monitor(m: ResolvedMonitor, ctx: _Context) -> MonitorResult:
+async def run_monitor(m: ResolvedMonitor, ctx: RunContext) -> MonitorResult:
     if not m.monitor.enabled:
         return MonitorResult(m.name, m.service, "skipped", tags=m.tags, warnings=["disabled"])
 
@@ -175,7 +187,7 @@ async def run_monitor(m: ResolvedMonitor, ctx: _Context) -> MonitorResult:
 
 
 def _render_context(
-    m: ResolvedMonitor, ctx: _Context, extracted: dict[str, dict[str, Any]]
+    m: ResolvedMonitor, ctx: RunContext, extracted: dict[str, dict[str, Any]]
 ) -> dict[str, Any]:
     return {
         "secrets": ctx.project.secrets,
@@ -185,7 +197,7 @@ def _render_context(
     }
 
 
-async def _run_steps(m: ResolvedMonitor, ctx: _Context) -> list[StepResult]:
+async def _run_steps(m: ResolvedMonitor, ctx: RunContext) -> list[StepResult]:
     results: list[StepResult] = []
     extracted: dict[str, dict[str, Any]] = {}
     failed = False
@@ -201,7 +213,7 @@ async def _run_steps(m: ResolvedMonitor, ctx: _Context) -> list[StepResult]:
 
 
 async def _run_step(
-    m: ResolvedMonitor, step: Step, ctx: _Context, extracted: dict[str, dict[str, Any]]
+    m: ResolvedMonitor, step: Step, ctx: RunContext, extracted: dict[str, dict[str, Any]]
 ) -> StepResult:
     req = step.request
     result = StepResult(step.name, req.method, req.url)
@@ -303,7 +315,7 @@ async def _run_step(
 
 
 def _drift(
-    m: ResolvedMonitor, step_cfg: Step, step: StepResult, cfg: DriftConfig, ctx: _Context
+    m: ResolvedMonitor, step_cfg: Step, step: StepResult, cfg: DriftConfig, ctx: RunContext
 ) -> DriftReport:
     assert ctx.store is not None
     sensitive = make_sensitive_check(ctx.project.config.redact)

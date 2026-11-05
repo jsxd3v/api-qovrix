@@ -10,7 +10,7 @@ from typing import Any, Literal
 from api_qovrix.engine.results import MonitorResult
 
 MAX_DRIFT_LINES = 5
-Event = Literal["run.failed", "test"]
+Event = Literal["run.failed", "incident", "test"]
 
 
 @dataclass
@@ -35,6 +35,26 @@ class FailedMonitor:
 
 
 @dataclass
+class RecoveredMonitor:
+    name: str
+    service: str
+    down_for: str
+
+
+def human_duration(seconds: float) -> str:
+    seconds = max(0, int(seconds))
+    if seconds < 90:
+        return f"{seconds}s"
+    minutes = round(seconds / 60)
+    if minutes < 90:
+        return f"{minutes} min"
+    hours, minutes = divmod(minutes, 60)
+    if hours < 48:
+        return f"{hours}h {minutes:02d}m" if minutes else f"{hours}h"
+    return f"{hours // 24}d {hours % 24}h"
+
+
+@dataclass
 class Alert:
     event: Event
     project: str | None
@@ -42,6 +62,9 @@ class Alert:
     total: int
     failed: list[FailedMonitor]
     run_url: str | None = None
+    service: str | None = None
+    recovered: list[RecoveredMonitor] = field(default_factory=list)
+    reminder: bool = False
     timestamp: str = field(default_factory=lambda: datetime.now(UTC).replace(microsecond=0).isoformat())
 
     @property
@@ -56,6 +79,15 @@ class Alert:
     def subject(self) -> str:
         if self.event == "test":
             return "Test alert"
+        if self.event == "incident":
+            parts = []
+            if self.failed:
+                noun = "monitor" if self.failed_count == 1 else "monitors"
+                parts.append(f"{self.failed_count} {noun} {'still ' if self.reminder else ''}down")
+            if self.recovered:
+                parts.append(f"{len(self.recovered)} recovered")
+            where = f" · {self.where}" if self.where else ""
+            return f"{self.service}: {', '.join(parts)}{where}"
         noun = "monitor" if self.failed_count == 1 else "monitors"
         where = f" · {self.where}" if self.where else ""
         return f"{self.failed_count} {noun} failed{where}"
@@ -65,6 +97,8 @@ class Alert:
         if self.event == "test":
             where = f" for {self.where}" if self.where else ""
             return f"✅ api-qovrix test alert{where}. Notifications are working."
+        if self.event == "incident":
+            return self._incident_text()
         head = f"❌ api-qovrix: {self.failed_count} of {self.total} monitors failed"
         if self.where:
             head += f" ({self.where})"
@@ -74,6 +108,29 @@ class Alert:
             lines.extend(f"    {c['path']}  {c['message']} ({c['severity']})" for c in m.drift)
         if self.run_url:
             lines += ["", f"Run: {self.run_url}"]
+        return "\n".join(lines)
+
+    def _incident_text(self) -> str:
+        where = f" ({self.where})" if self.where else ""
+        lines: list[str] = []
+        if self.failed:
+            noun = "monitor" if self.failed_count == 1 else "monitors"
+            state = "still down" if self.reminder else "down"
+            lines.append(f"🔴 api-qovrix: {self.failed_count} {noun} {state} in {self.service}{where}")
+            lines.append("")
+            for m in self.failed:
+                lines.append(f"• {m.name} {m.status}: {m.summary}")
+                lines.extend(f"    {c['path']}  {c['message']} ({c['severity']})" for c in m.drift)
+        if self.recovered:
+            if lines:
+                lines.append("")
+                lines.append("✅ Recovered:")
+            else:
+                n = len(self.recovered)
+                noun = "monitor" if n == 1 else "monitors"
+                lines.append(f"✅ api-qovrix: {n} {noun} recovered in {self.service}{where}")
+                lines.append("")
+            lines.extend(f"• {r.name} (was down {r.down_for})" for r in self.recovered)
         return "\n".join(lines)
 
     def to_dict(self) -> dict[str, Any]:

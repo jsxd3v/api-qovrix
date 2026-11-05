@@ -1,0 +1,19 @@
+# Run api-qovrix next to your app: it checks your API on a schedule, keeps history and sends alerts.
+#   1. Put api-qovrix.yaml and monitors/ in ./monitoring (see examples/public-api)
+#   2. Create a .env file next to this one with the variables below (never commit it)
+#   3. docker compose up -d && docker compose logs -f api-qovrix
+services:
+  api-qovrix:
+    image: ghcr.io/jsxd3v/api-qovrix:latest
+    command: serve
+    restart: unless-stopped
+    volumes:
+      - ./monitoring:/work:ro      # your monitor files (read-only)
+      - qovrix-data:/data          # run history (SQLite)
+    environment:
+      API_TOKEN: ${API_TOKEN}                  # secrets your monitors use
+      CHAT_WEBHOOK_URL: ${CHAT_WEBHOOK_URL}    # notifier settings
+      SMTP_URL: ${SMTP_URL}
+
+volumes:
+  qovrix-data:

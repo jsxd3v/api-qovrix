@@ -254,6 +254,162 @@ def _notify_run(project: Project, summary: Any, out: Console) -> None:
             out.print(f"[red]alert failed[/red] → {escape(r.name)}: {escape(r.message)}")
 
 
+# --------------------------------------------------------------------------- serve
+
+DataDirOpt = Annotated[
+    Path | None,
+    typer.Option(
+        "--data-dir",
+        envvar="API_QOVRIX_DATA",
+        help="Where run history is stored (default: .api-qovrix/data next to api-qovrix.yaml).",
+    ),
+]
+
+
+def _storage(project: Project, data_dir: Path | None) -> Any:
+    from api_qovrix.server.scheduler import default_data_dir, prepare_data_dir
+    from api_qovrix.server.storage import Storage
+
+    try:
+        return Storage(prepare_data_dir(data_dir or default_data_dir(project)))
+    except (OSError, RuntimeError) as exc:
+        raise _fail(f"cannot open the data folder: {exc}") from None
+
+
+@app.command()
+def serve(
+    config: ConfigOpt = None,
+    env: EnvOpt = None,
+    env_file: EnvFileOpt = None,
+    data_dir: DataDirOpt = None,
+    once: Annotated[bool, typer.Option("--once", help="Check every monitor once, alert, and exit.")] = False,
+    log_format: Annotated[str, typer.Option(help="Log lines as 'text' or 'json'.")] = "text",
+) -> None:
+    """Run monitors continuously on their intervals, keep history and send alerts."""
+    import contextlib
+    import signal
+
+    from api_qovrix.server.scheduler import Server, make_logger
+
+    if log_format not in ("text", "json"):
+        raise _fail("--log-format must be 'text' or 'json'")
+    project = _load(config, env, env_file)
+    storage = _storage(project, data_dir)
+    log = make_logger(log_format)
+
+    async def main() -> None:
+        try:
+            server = Server(project, storage, log=log)
+        except QovrixError as exc:
+            raise _fail(str(exc)) from None
+        if once:
+            await server.run_once()
+            await server.ctx.clients.aclose()
+            return
+        loop = asyncio.get_running_loop()
+        for sig in (signal.SIGINT, signal.SIGTERM):
+            # Windows has no signal handlers in asyncio: Ctrl+C raises KeyboardInterrupt instead.
+            with contextlib.suppress(NotImplementedError, RuntimeError):
+                loop.add_signal_handler(sig, server.stop)
+        await server.serve()
+
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        log("stopped")
+    finally:
+        storage.close()
+
+
+@app.command()
+def services(
+    config: ConfigOpt = None,
+    env: EnvOpt = None,
+    env_file: EnvFileOpt = None,
+    data_dir: DataDirOpt = None,
+) -> None:
+    """Current status per service and monitor (from `serve` history)."""
+    project = _load(config, env, env_file)
+    storage = _storage(project, data_dir)
+    try:
+        states = {s.monitor: s for s in asyncio.run(storage.all_states())}
+    finally:
+        storage.close()
+    if not states:
+        console.print("No history yet. Start [bold]api-qovrix serve[/bold] (or run it once with --once).")
+        raise typer.Exit(0)
+    style = {"up": "green", "down": "red", "paused": "dim", "unknown": "yellow"}
+    by_service: dict[str, list[Any]] = {}
+    for m in project.monitors:
+        by_service.setdefault(m.service, []).append(m)
+    for service in sorted(by_service):
+        known = [states[m.name] for m in by_service[service] if m.name in states]
+        worst = (
+            "down"
+            if any(s.state == "down" for s in known)
+            else ("up" if known and all(s.state in ("up", "paused") for s in known) else "unknown")
+        )
+        console.print(f"[{style[worst]}]●[/{style[worst]}] [bold]{escape(service)}[/bold] {worst}")
+        table = Table.grid(padding=(0, 2))
+        for _ in range(4):
+            table.add_column()
+        for m in sorted(by_service[service], key=lambda x: x.name):
+            st = states.get(m.name)
+            if st is None:
+                table.add_row("  ", escape(m.name), "[yellow]not checked yet[/yellow]", "")
+                continue
+            note = st.state
+            if st.state != "down" and st.consecutive_failures:
+                note += f" (failing {st.consecutive_failures}/{m.alert_after})"
+            last = (st.last_run_at or "").replace("+00:00", "Z")
+            detail = escape(st.last_summary or "") if st.last_status in ("fail", "error") else ""
+            table.add_row(
+                "  ",
+                escape(m.name),
+                f"[{style[st.state]}]{note}[/{style[st.state]}]",
+                f"[dim]{last}[/dim] {detail}",
+            )
+        console.print(table)
+
+
+@app.command()
+def history(
+    monitor: Annotated[str, typer.Argument(help="Monitor name.")],
+    limit: Annotated[int, typer.Option(min=1, max=1000, help="How many runs to show.")] = 20,
+    config: ConfigOpt = None,
+    env: EnvOpt = None,
+    env_file: EnvFileOpt = None,
+    data_dir: DataDirOpt = None,
+) -> None:
+    """Recent runs of one monitor (from `serve` history)."""
+    project = _load(config, env, env_file)
+    try:
+        project.monitor(monitor)
+    except QovrixError as exc:
+        raise _fail(str(exc)) from None
+    storage = _storage(project, data_dir)
+    try:
+        rows = asyncio.run(storage.history(monitor, limit))
+    finally:
+        storage.close()
+    if not rows:
+        console.print(f"No history for {escape(monitor)} yet.")
+        raise typer.Exit(0)
+    table = Table(box=None, padding=(0, 2), header_style="bold")
+    for col in ("time", "status", "duration", "details"):
+        table.add_column(col)
+    colors = {"pass": "green", "fail": "red", "error": "red", "skipped": "dim"}
+    for r in rows:
+        c = colors.get(r["status"], "white")
+        table.add_row(
+            r["started_at"].replace("+00:00", "Z"),
+            f"[{c}]{r['status']}[/{c}]",
+            f"{r['duration_ms']:.0f} ms",
+            escape(r["summary"] or ""),
+        )
+    console.print(table)
+
+
 # --------------------------------------------------------------------------- notifiers
 
 

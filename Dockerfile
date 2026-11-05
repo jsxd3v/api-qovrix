@@ -15,8 +15,10 @@ COPY --from=build /opt/venv /opt/venv
 COPY LICENSE NOTICE THIRD_PARTY_NOTICES.md /usr/share/doc/api-qovrix/
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
-RUN useradd --create-home --uid 10001 qovrix && mkdir /work && chown qovrix /work
+    PYTHONUNBUFFERED=1 \
+    API_QOVRIX_DATA=/data
+RUN useradd --create-home --uid 10001 qovrix && mkdir /work /data && chown qovrix /work /data
+VOLUME ["/data"]
 USER qovrix
 WORKDIR /work
 ENTRYPOINT ["api-qovrix"]

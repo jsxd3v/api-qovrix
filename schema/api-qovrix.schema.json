@@ -83,6 +83,37 @@
     "Defaults": {
       "additionalProperties": false,
       "properties": {
+        "alert_after": {
+          "default": 2,
+          "description": "Failures in a row before a monitor is 'down' (serve).",
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Alert After",
+          "type": "integer"
+        },
+        "alert_repeat": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+                  "type": "string"
+                },
+                {
+                  "minimum": 0,
+                  "type": "number"
+                }
+              ],
+              "description": "Duration, e.g. '500ms', '10s', '1m', '2h' (a number means seconds)."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Remind while still down, e.g. '1h' (serve).",
+          "title": "Alert Repeat"
+        },
         "drift": {
           "anyOf": [
             {
@@ -365,9 +396,93 @@
       "title": "OpenAPIConfig",
       "type": "object"
     },
+    "ServerSettings": {
+      "additionalProperties": false,
+      "description": "Settings for `api-qovrix serve`.",
+      "properties": {
+        "concurrency": {
+          "default": 10,
+          "description": "Monitors running at the same time.",
+          "maximum": 500,
+          "minimum": 1,
+          "title": "Concurrency",
+          "type": "integer"
+        },
+        "group_wait": {
+          "anyOf": [
+            {
+              "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+              "type": "string"
+            },
+            {
+              "minimum": 0,
+              "type": "number"
+            }
+          ],
+          "default": 10.0,
+          "description": "Wait this long to group changes of the same service into one alert.",
+          "title": "Group Wait"
+        },
+        "retention": {
+          "anyOf": [
+            {
+              "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+              "type": "string"
+            },
+            {
+              "minimum": 0,
+              "type": "number"
+            }
+          ],
+          "default": 2592000.0,
+          "description": "How long run history is kept, e.g. '30d'.",
+          "title": "Retention"
+        }
+      },
+      "title": "ServerSettings",
+      "type": "object"
+    },
     "ServiceConfig": {
       "additionalProperties": false,
       "properties": {
+        "alert_after": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Failures in a row before alerting (serve).",
+          "title": "Alert After"
+        },
+        "alert_repeat": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "pattern": "^\\s*\\d+(\\.\\d+)?\\s*(ms|s|m|h|d)?\\s*$",
+                  "type": "string"
+                },
+                {
+                  "minimum": 0,
+                  "type": "number"
+                }
+              ],
+              "description": "Duration, e.g. '500ms', '10s', '1m', '2h' (a number means seconds)."
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Remind while still down, e.g. '1h' (serve).",
+          "title": "Alert Repeat"
+        },
         "auth": {
           "anyOf": [
             {
@@ -683,6 +798,9 @@
       "description": "NAME: ${env:VARIABLE}. Values never live in this file.",
       "title": "Secrets",
       "type": "object"
+    },
+    "server": {
+      "$ref": "#/$defs/ServerSettings"
     },
     "services": {
       "additionalProperties": {

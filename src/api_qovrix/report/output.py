@@ -142,30 +142,46 @@ def _step_details(step: Any) -> list[Text]:
     return lines
 
 
-def summary_to_dict(summary: RunSummary) -> dict[str, Any]:
-    def step(s: Any) -> dict[str, Any]:
-        out: dict[str, Any] = {
-            "name": s.name,
-            "method": s.method,
-            "url": s.url,
-            "status_code": s.status_code,
-            "duration_ms": s.duration_ms,
-            "timings": s.timings,
-            "skipped": s.skipped,
-            "error": s.error,
-            "assertions": [{"name": a.name, "passed": a.passed, "message": a.message} for a in s.assertions],
+def step_to_dict(s: Any) -> dict[str, Any]:
+    out: dict[str, Any] = {
+        "name": s.name,
+        "method": s.method,
+        "url": s.url,
+        "status_code": s.status_code,
+        "duration_ms": s.duration_ms,
+        "timings": s.timings,
+        "skipped": s.skipped,
+        "error": s.error,
+        "assertions": [{"name": a.name, "passed": a.passed, "message": a.message} for a in s.assertions],
+    }
+    if s.drift:
+        out["drift"] = {
+            "status": s.drift.status,
+            "failed": s.drift.failed,
+            "samples": s.drift.samples,
+            "changes": [
+                {"path": c.path, "severity": c.severity, "message": c.message} for c in s.drift.changes
+            ],
         }
-        if s.drift:
-            out["drift"] = {
-                "status": s.drift.status,
-                "failed": s.drift.failed,
-                "samples": s.drift.samples,
-                "changes": [
-                    {"path": c.path, "severity": c.severity, "message": c.message} for c in s.drift.changes
-                ],
-            }
-        return out
+    return out
 
+
+def monitor_to_dict(r: MonitorResult) -> dict[str, Any]:
+    """A monitor result without response bodies (safe to store and show)."""
+    return {
+        "name": r.name,
+        "service": r.service,
+        "status": r.status,
+        "attempts": r.attempts,
+        "duration_ms": round(r.duration_ms, 1),
+        "tags": r.tags,
+        "summary": r.failure_summary,
+        "warnings": r.warnings,
+        "steps": [step_to_dict(s) for s in r.steps],
+    }
+
+
+def summary_to_dict(summary: RunSummary) -> dict[str, Any]:
     return {
         "environment": summary.environment,
         "duration_ms": round(summary.duration_ms, 1),
@@ -176,20 +192,7 @@ def summary_to_dict(summary: RunSummary) -> dict[str, Any]:
             "error": summary.count("error"),
             "skipped": summary.count("skipped"),
         },
-        "monitors": [
-            {
-                "name": r.name,
-                "service": r.service,
-                "status": r.status,
-                "attempts": r.attempts,
-                "duration_ms": round(r.duration_ms, 1),
-                "tags": r.tags,
-                "summary": r.failure_summary,
-                "warnings": r.warnings,
-                "steps": [step(s) for s in r.steps],
-            }
-            for r in summary.results
-        ],
+        "monitors": [monitor_to_dict(r) for r in summary.results],
     }
 
 

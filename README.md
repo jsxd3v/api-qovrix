@@ -109,6 +109,8 @@ Editors autocomplete these files from the published [JSON Schema](schema/).
   `contains`, `matches`, `gt`/`lt`, `length`, `type`, `exists`, `not_empty` and more.
 - **Services:** monitors grouped per API, with shared base URL, auth, headers and links to the provider's
   status page.
+- **Continuous monitoring:** `api-qovrix serve` runs each monitor on its interval, keeps history in SQLite,
+  and alerts when a monitor goes down (after N failures in a row) or recovers, grouped per service.
 - **Alerts by email or webhook:** `api-qovrix run --notify` sends one message per notifier listing what
   failed and why, including drift diffs. Works from scheduled CI, no server needed.
 - **CI-ready:** exit codes, JUnit XML, JSON reports, a GitHub Action, Docker image and standalone binaries.
@@ -116,8 +118,8 @@ Editors autocomplete these files from the published [JSON Schema](schema/).
 
 **Coming soon**
 
-- **v0.2 · Server mode:** `api-qovrix serve` with a scheduler, continuous alerts with recovery messages,
-  a REST API and a dashboard.
+- **v0.2 · Dashboard:** a web page with the status of every service and monitor, history and drift diffs,
+  plus a REST API, both password-protected.
 - **v0.3 · Insight:** learned latency baselines, `Deprecation` / `Sunset` / rate-limit / TLS-expiry warnings,
   status page, metrics export, more storage and install options, Python plugins.
 
@@ -150,6 +152,7 @@ Any other CI works too: run the binary or `docker run --rm -v "$PWD:/work" ghcr.
 - [Monitors, flows, auth and assertions](docs/monitors.md)
 - [Drift detection and baselines](docs/drift.md)
 - [OpenAPI](docs/openapi.md)
+- [Continuous monitoring (`serve`)](docs/serve.md)
 - [Alerts: email and webhook](docs/alerts.md)
 - [CI, Docker and reports](docs/ci.md)
 - [CLI reference](docs/cli.md)

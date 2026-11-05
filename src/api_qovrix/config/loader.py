@@ -50,6 +50,8 @@ class ResolvedMonitor:
     tags: list[str]
     drift: DriftConfig | None
     validate_openapi: bool
+    alert_after: int = 2
+    alert_repeat: float | None = None
 
     @property
     def name(self) -> str:
@@ -301,4 +303,6 @@ def _resolve(mon: Monitor, path: Path, project: Project, env: Environment | None
         drift=drift,
         validate_openapi=_first(mon.openapi, cfg.openapi.validate_responses if cfg.openapi else None)
         or False,
+        alert_after=_first(mon.alert_after, svc.alert_after, d.alert_after) or 2,
+        alert_repeat=_first(mon.alert_repeat, svc.alert_repeat, d.alert_repeat),
     )

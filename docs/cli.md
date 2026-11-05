@@ -9,6 +9,9 @@ Every command accepts `--help`. Commands that load a project accept `--config/-c
 | `api-qovrix init [DIR]` | Create `api-qovrix.yaml` and an example monitor |
 | `api-qovrix validate [--strict]` | Check config, monitor files, secrets and the OpenAPI spec |
 | `api-qovrix run [MONITOR...]` | Run monitors once (`--service`, `--tag`, `--junit`, `--json-out`, `--update-baselines`, `--notify`, `--concurrency`, `-v`) |
+| `api-qovrix serve [--once] [--data-dir DIR] [--log-format text\|json]` | Run monitors continuously, keep history, send down/recovered alerts |
+| `api-qovrix services` | Current status per service (from `serve` history) |
+| `api-qovrix history MONITOR [--limit N]` | Recent runs of one monitor |
 | `api-qovrix notifiers list` | Show notifiers and which monitors use them |
 | `api-qovrix notifiers test [NAME...]` | Send a test alert |
 | `api-qovrix drift show MONITOR [--live]` | Show the learned shape (and current drift) |
@@ -18,4 +21,5 @@ Every command accepts `--help`. Commands that load a project accept `--config/-c
 | `api-qovrix --version` | Show the version |
 
 Environment variables: `API_QOVRIX_ENV` selects the environment when `--env` is not given;
-`API_QOVRIX_RUN_URL` sets the run link in alerts (GitHub Actions is detected automatically).
+`API_QOVRIX_RUN_URL` sets the run link in alerts (GitHub Actions is detected automatically);
+`API_QOVRIX_DATA` sets where `serve` stores history.

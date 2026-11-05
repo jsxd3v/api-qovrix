@@ -24,6 +24,9 @@ site/
 *.env
 !.env.example
 
+# serve history (the folder also ignores itself)
+.api-qovrix/data/
+
 # Reports written by local runs
 junit*.xml
 api-qovrix-results.xml

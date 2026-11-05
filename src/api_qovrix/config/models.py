@@ -242,10 +242,14 @@ class Monitor(Model):
     auth: Auth | None = None
     headers: dict[str, str] = Field(default_factory=dict)
     interval: Duration | None = None
-    cron: str | None = None
+    cron: str | None = Field(None, description="Not supported yet: use 'interval'.")
     timeout: Duration | None = None
     retries: int | None = Field(None, ge=0, le=10)
     notify: list[str] | None = None
+    alert_after: int | None = Field(
+        None, ge=1, le=100, description="Failures in a row before alerting (serve)."
+    )
+    alert_repeat: Duration | None = Field(None, description="Remind while still down, e.g. '1h' (serve).")
     vars: dict[str, Any] = Field(default_factory=dict)
     openapi: bool | None = Field(None, description="Validate responses against the project's OpenAPI spec.")
 
@@ -287,6 +291,10 @@ class ServiceConfig(Model):
     retries: int | None = Field(None, ge=0, le=10)
     interval: Duration | None = None
     notify: list[str] | None = None
+    alert_after: int | None = Field(
+        None, ge=1, le=100, description="Failures in a row before alerting (serve)."
+    )
+    alert_repeat: Duration | None = Field(None, description="Remind while still down, e.g. '1h' (serve).")
     tags: list[str] = Field(default_factory=list)
     vars: dict[str, Any] = Field(default_factory=dict)
     links: dict[str, str] = Field(default_factory=dict, description="e.g. {status: ..., docs: ...}")
@@ -303,6 +311,10 @@ class Defaults(Model):
     timeout: Duration = 10.0
     retries: int = Field(0, ge=0, le=10)
     notify: list[str] = Field(default_factory=list)
+    alert_after: int = Field(
+        2, ge=1, le=100, description="Failures in a row before a monitor is 'down' (serve)."
+    )
+    alert_repeat: Duration | None = Field(None, description="Remind while still down, e.g. '1h' (serve).")
     headers: dict[str, str] = Field(default_factory=dict)
     drift: DriftConfig | None = Field(None, description="Default drift settings for every monitor.")
 
@@ -343,6 +355,16 @@ class WebhookNotifier(Model):
 NotifierConfig = Annotated[EmailNotifier | WebhookNotifier, Field(discriminator="type")]
 
 
+class ServerSettings(Model):
+    """Settings for `api-qovrix serve`."""
+
+    retention: Duration = Field(30 * 86400.0, description="How long run history is kept, e.g. '30d'.")
+    group_wait: Duration = Field(
+        10.0, description="Wait this long to group changes of the same service into one alert."
+    )
+    concurrency: int = Field(10, ge=1, le=500, description="Monitors running at the same time.")
+
+
 class ProjectConfig(Model):
     version: Literal[1] = 1
     project: str | None = None
@@ -359,6 +381,7 @@ class ProjectConfig(Model):
     redact: list[str] = Field(
         default_factory=list, description="Extra JSON keys to mask in reports and baselines."
     )
+    server: ServerSettings = Field(default_factory=ServerSettings)
     allowed_hosts: list[str] | None = Field(
         None,
         description="Optional allowlist of hosts monitors may call (e.g. 'api.example.com', '*.internal').",
