@@ -5,6 +5,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-05
+
+### Fixed
+- With `branding.logo` set, the header, login page and status page showed only the logo and hid the name.
+  The name is now shown next to the logo (use a square icon without text as the logo).
+
 ## [0.4.0] - 2026-11-05
 
 ### Added
@@ -106,7 +112,8 @@ First release: "CI and contracts".
 - JSON Schema for `api-qovrix.yaml` and monitor files.
 - Docker image, GitHub Action, standalone binaries and an install script.
 
-[Unreleased]: https://github.com/jsxd3v/api-qovrix/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/jsxd3v/api-qovrix/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/jsxd3v/api-qovrix/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/jsxd3v/api-qovrix/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/jsxd3v/api-qovrix/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/jsxd3v/api-qovrix/compare/v0.2.1...v0.2.2
