@@ -27,6 +27,13 @@ If you change the config models, regenerate the published JSON Schema:
 
 Tests never call real APIs: HTTP is mocked with [respx](https://lundberg.github.io/respx/).
 
+Dashboard changes: also run the real-browser tests (skipped when Playwright isn't installed):
+
+```bash
+uv pip install playwright && .venv/bin/playwright install chromium
+.venv/bin/pytest tests/test_browser.py
+```
+
 ## Pull requests
 
 - Keep changes focused; one feature or fix per pull request.

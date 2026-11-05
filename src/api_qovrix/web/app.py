@@ -89,7 +89,8 @@ def create_app(server: Server, auth: Auth, clock: Any = None) -> FastAPI:
         response: Response = await call_next(request)
         response.headers["Content-Security-Policy"] = CSP
         response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["Referrer-Policy"] = "no-referrer"
+        # same-origin (not no-referrer): with no-referrer, browsers send `Origin: null` on our own form posts.
+        response.headers["Referrer-Policy"] = "same-origin"
         response.headers["X-Frame-Options"] = "DENY"
         if not path.startswith("/static/"):
             response.headers["Cache-Control"] = "no-store"
@@ -264,12 +265,24 @@ def create_app(server: Server, auth: Auth, clock: Any = None) -> FastAPI:
 
 
 def _same_origin(request: Request) -> bool:
-    """Refuse cross-site form posts (defence in depth on top of SameSite cookies)."""
+    """Refuse cross-site form posts (defence in depth on top of SameSite cookies).
+
+    Modern browsers say where a request comes from in `Sec-Fetch-Site`, which also works behind a reverse
+    proxy. Older browsers: compare `Origin`/`Referer` with the host, including the proxy's forwarded host.
+    """
+    site = request.headers.get("sec-fetch-site")
+    if site:
+        return site in ("same-origin", "none")
     origin = request.headers.get("origin") or request.headers.get("referer")
     if not origin:
         return True  # non-browser clients (curl, scripts with an API key)
-    host = request.headers.get("host", "")
-    return urlsplit(origin).netloc == host
+    if origin == "null":
+        return False
+    hosts = {request.headers.get("host", "")}
+    forwarded = request.headers.get("x-forwarded-host")
+    if forwarded:
+        hosts.add(forwarded.split(",")[0].strip())
+    return urlsplit(origin).netloc in hosts
 
 
 def _safe_next(target: str) -> str:

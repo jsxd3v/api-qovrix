@@ -170,8 +170,12 @@ Any other CI works too: run the binary, or
 ## On a server
 
 ```bash
-API_QOVRIX_PASSWORD='a-long-password' api-qovrix serve
+openssl rand -base64 24                    # generate a dashboard password
+echo "API_QOVRIX_PASSWORD=<paste it>" >> .env && chmod 600 .env && echo ".env" >> .gitignore
+api-qovrix serve --env-file .env
 ```
+
+See [setting the password safely](docs/dashboard.md#setting-the-password-safely).
 
 Or with Docker Compose, next to your app: see
 [`examples/docker-compose`](examples/docker-compose/docker-compose.yml) and [docs/serve.md](docs/serve.md).

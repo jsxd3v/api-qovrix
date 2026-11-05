@@ -3,10 +3,13 @@
 `api-qovrix serve` also serves a dashboard and a REST API, in the same process as the scheduler.
 
 ```bash
-API_QOVRIX_PASSWORD='a-long-password' api-qovrix serve      # http://localhost:8080
-api-qovrix serve --port 9000                                  # another port
-api-qovrix serve --no-web                                     # scheduler and alerts only
+api-qovrix serve --env-file .env      # password from .env (see below); http://localhost:8080
+api-qovrix serve --port 9000          # another port
+api-qovrix serve --no-web             # scheduler and alerts only, no dashboard
 ```
+
+On your own machine you can skip the password: `api-qovrix serve` then serves an open dashboard on
+`127.0.0.1` only.
 
 ## Pages
 
@@ -36,6 +39,51 @@ and on phones.
   refused.
 - For access over the internet, put it behind your existing reverse proxy with HTTPS (e.g. at
   `monitor.example.com`), or keep it private and reach it through a VPN or SSH tunnel.
+
+## Setting the password safely
+
+**1. Generate a strong one.** Use a random value, not a word or a reused password:
+
+```bash
+openssl rand -base64 24
+# or: python3 -c "import secrets; print(secrets.token_urlsafe(24))"
+```
+
+Do the same for `API_QOVRIX_API_KEY` if scripts will use the REST API. Use two different values.
+
+**2. Keep it in a file that is never committed**, readable only by you:
+
+```bash
+# .env  (next to api-qovrix.yaml)
+API_QOVRIX_PASSWORD=paste-the-generated-value
+API_QOVRIX_API_KEY=paste-another-generated-value
+```
+
+```bash
+chmod 600 .env                 # only your user can read it
+echo ".env" >> .gitignore      # never commit it
+api-qovrix serve --env-file .env
+```
+
+The same file can hold your monitors' secrets (`API_TOKEN=...`) and notifier URLs. Values already set in the
+environment take precedence over the file. `--host`, `--port` and `--data-dir` are read before the file is
+loaded, so set those as options or real environment variables.
+
+**3. Don't type it on the command line.** `API_QOVRIX_PASSWORD=... api-qovrix serve` works, but your shell
+saves the line in its history file (`~/.zsh_history`, `~/.bash_history`), where the password stays in plain
+text. If you already did this, change the password and remove the line from the history file.
+
+**On a server**, use what the platform provides instead of a file next to the project:
+
+| Where | How |
+|---|---|
+| Docker Compose | Put the variables in a `.env` file next to `docker-compose.yml` (Compose reads it automatically), `chmod 600` it, and keep it out of Git. See [`examples/docker-compose`](../examples/docker-compose/docker-compose.yml). |
+| systemd | `EnvironmentFile=/etc/api-qovrix/api-qovrix.env` in the service, with that file owned by root and `chmod 600`. |
+| Kubernetes | A Secret, mounted as environment variables. |
+| Cloud platforms | Their secret manager or "environment variables / secrets" settings. |
+
+**Changing it:** update the value and restart `serve`. Everyone is logged out, because sessions end when the
+process restarts.
 
 ## REST API
 

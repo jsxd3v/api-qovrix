@@ -5,6 +5,20 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-11-05
+
+### Fixed
+- Dashboard login, logout and "Run now" were refused with "cross-origin request refused" in real browsers
+  when a password was set. The `no-referrer` policy made browsers send `Origin: null` on the dashboard's own
+  forms; it is now `same-origin`.
+- The cross-site check now uses the browser's `Sec-Fetch-Site` header, so forms also work behind a reverse
+  proxy (where the public address differs from the one the server sees). Older browsers fall back to comparing
+  `Origin` with `Host` or `X-Forwarded-Host`.
+
+### Added
+- CI runs the dashboard in a real browser (login, forms, stylesheet), so browser-only problems are caught.
+- Docs: how to generate and store the dashboard password safely (`.env` + `--env-file`, not the command line).
+
 ## [0.2.1] - 2026-11-05
 
 ### Fixed
@@ -54,7 +68,8 @@ First release: "CI and contracts".
 - JSON Schema for `api-qovrix.yaml` and monitor files.
 - Docker image, GitHub Action, standalone binaries and an install script.
 
-[Unreleased]: https://github.com/jsxd3v/api-qovrix/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/jsxd3v/api-qovrix/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/jsxd3v/api-qovrix/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/jsxd3v/api-qovrix/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/jsxd3v/api-qovrix/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/jsxd3v/api-qovrix/releases/tag/v0.1.0

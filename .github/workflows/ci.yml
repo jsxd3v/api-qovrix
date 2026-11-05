@@ -56,6 +56,16 @@ jobs:
           name: coverage
           path: coverage.xml
 
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv venv --python 3.12 && uv pip install -e ".[dev]" playwright
+      - run: uv run --no-sync playwright install --with-deps chromium
+      - name: Dashboard in a real browser (login, forms, stylesheet)
+        run: uv run --no-sync pytest tests/test_browser.py -v
+
   docker:
     runs-on: ubuntu-latest
     steps:

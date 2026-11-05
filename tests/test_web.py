@@ -297,3 +297,38 @@ def test_static_types_survive_a_bad_windows_registry(server):
     finally:
         mimetypes.add_type("text/javascript", ".js")
         mimetypes.add_type("text/css", ".css")
+
+
+def test_cli_serve_reads_password_from_env_file(make_project, monkeypatch, tmp_path):
+    monkeypatch.delenv("API_QOVRIX_PASSWORD", raising=False)
+    root = make_project(CONFIG, {"monitors/shop.yaml": MONITORS})
+    (root / ".env").write_text("API_QOVRIX_PASSWORD=short\n", encoding="utf-8")
+    old = os.getcwd()
+    os.chdir(root)
+    try:
+        r = CliRunner().invoke(cli_app, ["serve", "--env-file", ".env", "--host", "0.0.0.0"])
+    finally:
+        os.chdir(old)
+        os.environ.pop("API_QOVRIX_PASSWORD", None)
+    assert r.exit_code == 2 and "at least 8" in r.output  # the file's value was used
+
+
+def test_browser_form_posts_are_accepted_and_cross_site_refused(server):
+    """What real browsers send: Sec-Fetch-Site, and behind a proxy an Origin that differs from Host."""
+    with client(server) as c:
+        r = c.get("/login")
+        assert r.headers["referrer-policy"] == "same-origin"  # no-referrer made browsers send Origin: null
+
+        same = {"Sec-Fetch-Site": "same-origin", "Origin": "https://monitor.example.com"}
+        r = c.post("/login", data={"password": PASSWORD, "next": "/"}, headers=same, follow_redirects=False)
+        assert r.status_code == 303 and COOKIE in c.cookies  # behind a proxy, Host is the upstream address
+
+        cross = {"Sec-Fetch-Site": "cross-site", "Origin": "https://evil.example"}
+        assert c.post("/monitors/orders/run", headers=cross).status_code == 403
+        assert c.post("/logout", headers={"Sec-Fetch-Site": "same-site"}).status_code == 403
+
+        # older browsers without Sec-Fetch-Site: Origin compared with Host or the proxy's forwarded host
+        assert c.post("/monitors/orders/run", headers={"Origin": "null"}).status_code == 403
+        proxied = {"Origin": "https://monitor.example.com", "X-Forwarded-Host": "monitor.example.com"}
+        r = c.post("/monitors/orders/run", headers=proxied, follow_redirects=False)
+        assert r.status_code == 303

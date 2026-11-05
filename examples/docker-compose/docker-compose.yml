@@ -1,7 +1,8 @@
 # Run api-qovrix next to your app: it checks your API on a schedule, keeps history, sends alerts
 # and serves a dashboard.
 #   1. Put api-qovrix.yaml and monitors/ in ./monitoring (see examples/public-api)
-#   2. Create a .env file next to this one with the variables below (never commit it)
+#   2. Create a .env file next to this one with the variables below; `chmod 600 .env` and never commit it.
+#      Generate the password and API key with: openssl rand -base64 24
 #   3. docker compose up -d && docker compose logs -f api-qovrix
 #   4. Open http://localhost:8080 (or put your reverse proxy with HTTPS in front of it)
 services:
